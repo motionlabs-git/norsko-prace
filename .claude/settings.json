@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node scripts/sync-now.mjs --max-pages=1)",
+      "Bash(kill 44310)",
+      "Bash(pnpm add *)",
+      "WebFetch(domain:unsplash.com)"
+    ]
+  }
+}

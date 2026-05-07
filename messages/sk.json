@@ -1,0 +1,76 @@
+{
+  "nav": {
+    "jobs": "Práca",
+    "guides": "Sprievodcovia",
+    "blog": "Blog",
+    "about": "O projekte"
+  },
+  "home": {
+    "hero": {
+      "title": "Práca v Nórsku",
+      "subtitle": "Sezónne pracovné príležitosti preložené do slovenčiny — priamo z nórskeho úradu práce",
+      "searchPlaceholder": "Hľadaj pozíciu alebo lokalitu...",
+      "searchCta": "Hľadať prácu"
+    },
+    "featuredJobs": "Aktuálne ponuky",
+    "viewAll": "Zobraziť všetko",
+    "howItWorks": {
+      "title": "Ako to funguje",
+      "step1": { "title": "Vyber ponuku", "desc": "Prehľadávaj stovky sezónnych inzerátov preložených do slovenčiny" },
+      "step2": { "title": "Prečítaj sprievodcu", "desc": "Zisti všetko o D-number, BankID a živote v Nórsku" },
+      "step3": { "title": "Pošli prihlášku", "desc": "Klikni na odkaz a prihlás sa priamo u zamestnávateľa" }
+    }
+  },
+  "jobs": {
+    "title": "Pracovné ponuky v Nórsku",
+    "description": "Sezónne a krátkodobé pozície vhodné pre slovensky hovoriacich uchádzačov",
+    "filters": {
+      "category": "Kategória",
+      "type": "Typ úväzku",
+      "location": "Oblasť",
+      "allCategories": "Všetky kategórie",
+      "allTypes": "Všetky typy",
+      "allLocations": "Všetky oblasti"
+    },
+    "sort": {
+      "newest": "Najnovšie",
+      "deadline": "Deadline"
+    },
+    "results": "{count} ponúk",
+    "noResults": "Žiadne ponuky nenájdené",
+    "deadline": "Prihlásiť do",
+    "location": "Lokalita",
+    "type": "Typ",
+    "positions": "Počet miest",
+    "apply": "Prihlásiť sa",
+    "originalAd": "Originálny inzerát (NO)",
+    "postedBy": "Zverejnil",
+    "categories": {
+      "agriculture": "Poľnohospodárstvo a rybolov",
+      "hospitality": "Cestovný ruch a gastronómia",
+      "construction": "Stavebníctvo",
+      "transport": "Doprava a logistika"
+    },
+    "types": {
+      "sesong": "Sezónna",
+      "vikariat": "Zástup",
+      "midlertidig": "Dočasná"
+    }
+  },
+  "blog": {
+    "title": "Sprievodcovia a tipy",
+    "description": "Všetko čo potrebuješ vedieť pred odchodom do Nórska",
+    "readMore": "Čítať ďalej",
+    "category": "Kategória"
+  },
+  "footer": {
+    "description": "Sezónna práca v Nórsku pre česky a slovensky hovoriacich uchádzačov.",
+    "source": "Dáta z",
+    "rights": "Všetky práva vyhradené"
+  },
+  "common": {
+    "loading": "Načítavam...",
+    "error": "Nastala chyba",
+    "backToList": "Späť na prehľad"
+  }
+}

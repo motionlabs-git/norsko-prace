@@ -1,0 +1,76 @@
+{
+  "nav": {
+    "jobs": "Práce",
+    "guides": "Průvodce",
+    "blog": "Blog",
+    "about": "O projektu"
+  },
+  "home": {
+    "hero": {
+      "title": "Práce v Norsku",
+      "subtitle": "Sezónní pracovní příležitosti přeložené do češtiny — přímo z norského pracovního úřadu",
+      "searchPlaceholder": "Hledej pozici nebo lokalitu...",
+      "searchCta": "Hledat práci"
+    },
+    "featuredJobs": "Aktuální nabídky",
+    "viewAll": "Zobrazit vše",
+    "howItWorks": {
+      "title": "Jak to funguje",
+      "step1": { "title": "Vyber nabídku", "desc": "Procházej stovky sezónních inzerátů přeložených do češtiny" },
+      "step2": { "title": "Přečti průvodce", "desc": "Zjisti vše o D-number, BankID a životě v Norsku" },
+      "step3": { "title": "Podej přihlášku", "desc": "Klikni na odkaz a přihlas se přímo u zaměstnavatele" }
+    }
+  },
+  "jobs": {
+    "title": "Pracovní nabídky v Norsku",
+    "description": "Sezónní a krátkodobé pozice vhodné pro česky mluvící uchazeče",
+    "filters": {
+      "category": "Kategorie",
+      "type": "Typ úvazku",
+      "location": "Oblast",
+      "allCategories": "Všechny kategorie",
+      "allTypes": "Všechny typy",
+      "allLocations": "Všechny oblasti"
+    },
+    "sort": {
+      "newest": "Nejnovější",
+      "deadline": "Deadline"
+    },
+    "results": "{count} nabídek",
+    "noResults": "Žádné nabídky nenalezeny",
+    "deadline": "Přihlásit do",
+    "location": "Lokalita",
+    "type": "Typ",
+    "positions": "Počet míst",
+    "apply": "Přihlásit se",
+    "originalAd": "Originální inzerát (NO)",
+    "postedBy": "Zveřejnil",
+    "categories": {
+      "agriculture": "Zemědělství a rybolov",
+      "hospitality": "Cestovní ruch a gastronomie",
+      "construction": "Stavebnictví",
+      "transport": "Doprava a logistika"
+    },
+    "types": {
+      "sesong": "Sezónní",
+      "vikariat": "Zástup",
+      "midlertidig": "Dočasný"
+    }
+  },
+  "blog": {
+    "title": "Průvodci a tipy",
+    "description": "Vše co potřebuješ vědět před odjezdem do Norska",
+    "readMore": "Číst dál",
+    "category": "Kategorie"
+  },
+  "footer": {
+    "description": "Sezónní práce v Norsku pro česky a slovensky mluvící uchazeče.",
+    "source": "Data z",
+    "rights": "Všechna práva vyhrazena"
+  },
+  "common": {
+    "loading": "Načítám...",
+    "error": "Nastala chyba",
+    "backToList": "Zpět na přehled"
+  }
+}

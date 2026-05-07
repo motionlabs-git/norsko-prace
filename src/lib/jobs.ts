@@ -1,0 +1,382 @@
+import { createServerSupabase, supabaseAdmin } from "./supabase";
+import type { Job, LocalizedJob, Locale, NavVacancy } from "@/types";
+
+// ── Category mapping (NAV Norwegian → display) ─────────────────────────────
+export const CATEGORY_MAP: Record<string, { label: string; icon: string; color: string; badgeClass: string; accentClass: string; arrowClass: string }> = {
+  "Jordbruk, skogbruk og fiske": {
+    label: "Zemědělství",
+    icon: "🌾",
+    color: "teal",
+    badgeClass: "bg-[var(--color-primary-light)] text-[var(--color-primary)]",
+    accentClass: "bg-[var(--color-primary)]",
+    arrowClass: "bg-[var(--color-primary)] text-white",
+  },
+  "Reiseliv og mat": {
+    label: "Gastronomie",
+    icon: "🍽️",
+    color: "yellow",
+    badgeClass: "bg-yellow-50 text-yellow-800",
+    accentClass: "bg-yellow-500",
+    arrowClass: "bg-yellow-500 text-white",
+  },
+  "Bygg og anlegg": {
+    label: "Stavebnictví",
+    icon: "🏗️",
+    color: "orange",
+    badgeClass: "bg-[var(--color-accent-light)] text-[var(--color-accent)]",
+    accentClass: "bg-[var(--color-accent)]",
+    arrowClass: "bg-[var(--color-accent)] text-white",
+  },
+  "Transport og logistikk": {
+    label: "Doprava",
+    icon: "🚚",
+    color: "purple",
+    badgeClass: "bg-purple-50 text-purple-700",
+    accentClass: "bg-purple-600",
+    arrowClass: "bg-purple-600 text-white",
+  },
+  "Renhold og eiendomsdrift": {
+    label: "Úklid",
+    icon: "🧹",
+    color: "blue",
+    badgeClass: "bg-blue-50 text-blue-700",
+    accentClass: "bg-blue-500",
+    arrowClass: "bg-blue-500 text-white",
+  },
+};
+
+export const DEFAULT_CATEGORY = {
+  label: "Různé",
+  icon: "💼",
+  color: "gray",
+  badgeClass: "bg-gray-100 text-gray-700",
+  accentClass: "bg-gray-400",
+  arrowClass: "bg-gray-400 text-white",
+};
+
+export function getCategoryMeta(categoryLevel1: string | null) {
+  if (!categoryLevel1) return DEFAULT_CATEGORY;
+  return CATEGORY_MAP[categoryLevel1] ?? DEFAULT_CATEGORY;
+}
+
+// ── Read operations ─────────────────────────────────────────────────────────
+
+export async function getRecentJobs(limit = 6): Promise<Job[]> {
+  const db = await createServerSupabase();
+  const { data, error } = await db
+    .from("jobs")
+    .select("*")
+    .eq("is_active", true)
+    .eq("requires_norwegian", false)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("getRecentJobs error:", error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
+export async function getFeaturedJobs(limit = 3): Promise<Job[]> {
+  const db = await createServerSupabase();
+  const { data, error } = await db
+    .from("jobs")
+    .select("*")
+    .eq("is_active", true)
+    .eq("is_featured", true)
+    .eq("requires_norwegian", false)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+
+  if (error) return [];
+  if (!data || data.length === 0) return getRecentJobs(limit);
+  return data;
+}
+
+export async function getJobBySlug(slug: string): Promise<Job | null> {
+  const db = await createServerSupabase();
+  const { data, error } = await db
+    .from("jobs")
+    .select("*")
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .single();
+
+  if (error || !data) return null;
+  return data;
+}
+
+export async function getJobs({
+  category,
+  engagementType,
+  city,
+  norwegianOk = true,
+  page = 1,
+  pageSize = 20,
+}: {
+  category?: string;
+  engagementType?: string;
+  city?: string;
+  norwegianOk?: boolean;
+  page?: number;
+  pageSize?: number;
+}): Promise<{ jobs: Job[]; total: number }> {
+  const db = await createServerSupabase();
+  let query = db
+    .from("jobs")
+    .select("*", { count: "exact" })
+    .eq("is_active", true)
+    .order("published_at", { ascending: false });
+
+  if (category) query = query.eq("category_level1", category);
+  if (engagementType) query = query.ilike("engagement_type", engagementType);
+  if (city) query = query.eq("location_city", city);
+  if (!norwegianOk) query = query.eq("requires_norwegian", false);
+
+  const from = (page - 1) * pageSize;
+  query = query.range(from, from + pageSize - 1);
+
+  const { data, error, count } = await query;
+  if (error) {
+    // "Requested range not satisfiable" = page beyond available data
+    if (error.code === "PGRST103" || error.message.includes("range not satisfiable")) {
+      const { count: total } = await db
+        .from("jobs")
+        .select("*", { count: "exact", head: true })
+        .eq("is_active", true);
+      return { jobs: [], total: total ?? 0 };
+    }
+    console.error("getJobs error:", error.message);
+    return { jobs: [], total: 0 };
+  }
+  return { jobs: data ?? [], total: count ?? 0 };
+}
+
+export async function getSimilarJobs(
+  currentId: string,
+  category: string | null,
+  limit = 8
+): Promise<Job[]> {
+  const db = await createServerSupabase();
+  let query = db
+    .from("jobs")
+    .select("*")
+    .eq("is_active", true)
+    .neq("id", currentId)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+
+  if (category) query = query.eq("category_level1", category);
+
+  const { data, error } = await query;
+  if (error) return [];
+  return data ?? [];
+}
+
+export async function getDistinctCities(): Promise<string[]> {
+  const db = await createServerSupabase();
+  const { data, error } = await db
+    .from("jobs")
+    .select("location_city")
+    .eq("is_active", true)
+    .not("location_city", "is", null);
+
+  if (error || !data) return [];
+  const unique = [...new Set(data.map((r) => r.location_city as string))];
+  return unique.sort((a, b) => a.localeCompare(b));
+}
+
+export async function getAllJobSlugs(): Promise<{ slug: string; updatedAt: string }[]> {
+  const db = await createServerSupabase();
+  const { data, error } = await db
+    .from("jobs")
+    .select("slug, updated_at")
+    .eq("is_active", true)
+    .order("published_at", { ascending: false });
+
+  if (error || !data) return [];
+  return data.map((r) => ({ slug: r.slug as string, updatedAt: r.updated_at as string }));
+}
+
+// ── Norwegian enum translations ──────────────────────────────────────────────
+
+const ENGAGEMENT_TYPE: Record<string, Record<Locale, string>> = {
+  Sesong:      { cs: "Sezónní",   sk: "Sezónna" },
+  Vikariat:    { cs: "Zástup",    sk: "Zástup" },
+  Midlertidig: { cs: "Dočasný",   sk: "Dočasná" },
+  Fast:        { cs: "Trvalý",    sk: "Trvalá" },
+  Feriejobb:   { cs: "Brigáda",   sk: "Brigáda" },
+  Prosjekt:    { cs: "Projekt",   sk: "Projekt" },
+};
+
+const EXTENT: Record<string, Record<Locale, string>> = {
+  Heltid: { cs: "Plný úvazek",      sk: "Plný úväzok" },
+  Deltid: { cs: "Částečný úvazek",  sk: "Čiastočný úväzok" },
+};
+
+const SECTOR: Record<string, Record<Locale, string>> = {
+  Offentlig:       { cs: "Veřejný sektor",    sk: "Verejný sektor" },
+  Privat:          { cs: "Soukromý sektor",   sk: "Súkromný sektor" },
+  "Ikke oppgitt":  { cs: "Neuvedeno",         sk: "Neuvedené" },
+};
+
+function translateEnum(
+  map: Record<string, Record<Locale, string>>,
+  value: string | null,
+  locale: Locale
+): string | null {
+  if (!value) return null;
+  return map[value]?.[locale] ?? value;
+}
+
+// ── Localization helper ──────────────────────────────────────────────────────
+
+export function localizeJob(job: Job, locale: Locale): LocalizedJob {
+  const suffix = `_${locale}` as const;
+  return {
+    id: job.id,
+    slug: job.slug,
+    title: (job[`title${suffix}` as keyof Job] as string) ?? job.title_no ?? "",
+    description:
+      (job[`description${suffix}` as keyof Job] as string) ??
+      job.description_no ??
+      "",
+    company: job.company,
+    location: job.location_city || null,
+    category: job.category_level1,
+    engagementType: translateEnum(ENGAGEMENT_TYPE, job.engagement_type, locale),
+    extent: translateEnum(EXTENT, job.extent, locale),
+    applicationDue: job.application_due,
+    publishedAt: job.published_at,
+    expiresAt: job.expires_at,
+    sourceUrl: job.source_url,
+    applicationUrl: job.application_url,
+    isFeatured: job.is_featured,
+    isPremium: job.is_premium,
+  };
+}
+
+export function translateSector(value: string | null, locale: Locale): string | null {
+  return translateEnum(SECTOR, value, locale);
+}
+
+export async function getPremiumJobs(): Promise<Job[]> {
+  const db = await createServerSupabase();
+  const { data, error } = await db
+    .from("jobs")
+    .select("*")
+    .eq("is_active", true)
+    .eq("is_premium", true)
+    .order("published_at", { ascending: false });
+
+  if (error) return [];
+  return data ?? [];
+}
+
+export async function getFavorites(userId: string): Promise<Job[]> {
+  const db = await createServerSupabase();
+  const { data, error } = await db
+    .from("favorites")
+    .select("job_id, jobs(*)")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) return [];
+  return (data ?? []).map((row) => row.jobs as unknown as Job).filter(Boolean);
+}
+
+export async function getUserFavoriteIds(userId: string): Promise<string[]> {
+  const db = await createServerSupabase();
+  const { data, error } = await db
+    .from("favorites")
+    .select("job_id")
+    .eq("user_id", userId);
+
+  if (error) return [];
+  return (data ?? []).map((r) => r.job_id as string);
+}
+
+// ── Write operations (used by sync) ─────────────────────────────────────────
+
+export function vacancyToJobRow(
+  vacancy: NavVacancy,
+  translations: { title_cs: string; title_sk: string; description_cs: string; description_sk: string; requires_norwegian?: boolean; contact_name?: string | null; contact_email?: string | null; contact_phone?: string | null }
+): Omit<Job, "id" | "created_at" | "updated_at"> {
+  const v = vacancy.ad_content!;
+  const loc = v.workLocations?.[0];
+  const cat = v.occupationCategories?.[0];
+  const slug = slugify(v.title).slice(0, 60) + "-" + vacancy.uuid.replace(/-/g, "").slice(-8);
+
+  return {
+    nav_id: vacancy.uuid,
+    slug,
+    title_no: v.title,
+    title_cs: translations.title_cs,
+    title_sk: translations.title_sk,
+    description_no: v.description,
+    description_cs: translations.description_cs,
+    description_sk: translations.description_sk,
+    company: v.employer?.name ?? null,
+    location_city: loc?.city ?? null,
+    location_county: loc?.county ?? null,
+    category_level1: cat?.level1 ?? null,
+    category_level2: cat?.level2 ?? null,
+    engagement_type: v.engagementtype ?? null,
+    extent: v.extent ?? null,
+    sector: v.sector ?? null,
+    salary: null,
+    position_count: v.positioncount ? parseInt(v.positioncount, 10) : null,
+    application_due: v.applicationDue ?? null,
+    published_at: v.published ?? null,
+    expires_at: v.expires ?? null,
+    source_url: v.sourceurl ?? null,
+    application_url: v.applicationUrl ?? null,
+    is_featured: false,
+    is_premium: false,
+    is_active: vacancy.status === "ACTIVE",
+    requires_norwegian: translations.requires_norwegian ?? false,
+    contact_name: translations.contact_name ?? null,
+    contact_email: translations.contact_email ?? null,
+    contact_phone: translations.contact_phone ?? null,
+  };
+}
+
+export async function upsertJobs(
+  rows: ReturnType<typeof vacancyToJobRow>[]
+): Promise<number> {
+  const db = supabaseAdmin();
+  const { error, data } = await db
+    .from("jobs")
+    .upsert(rows, { onConflict: "nav_id", ignoreDuplicates: false })
+    .select("id");
+
+  if (error) {
+    console.error("upsertJobs error:", error.message);
+    return 0;
+  }
+  return data?.length ?? 0;
+}
+
+export async function deactivateJobs(navIds: string[]): Promise<void> {
+  if (navIds.length === 0) return;
+  const db = supabaseAdmin();
+  const { error } = await db
+    .from("jobs")
+    .update({ is_active: false })
+    .in("nav_id", navIds);
+
+  if (error) console.error("deactivateJobs error:", error.message);
+}
+
+// ── Utils ────────────────────────────────────────────────────────────────────
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}
