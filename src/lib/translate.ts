@@ -14,6 +14,7 @@ export interface JobTranslations {
   description_cs: string;
   description_sk: string;
   requires_norwegian: boolean;
+  includes_accommodation: boolean;
   contact_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
@@ -22,6 +23,7 @@ export interface JobTranslations {
 const SYSTEM_BASE = `You process Norwegian job ads for a Czech/Slovak job portal. For each job return a single JSON object — no markdown, no commentary, only raw JSON.
 
 Required keys:
+- includes_accommodation: boolean — SET TRUE if the employer provides housing/accommodation as part of the offer. Look for: "losji", "bolig", "hybel", "overnatting inkludert", "innkvartering", "boplass", "husvære", "kost og losji", "vi tilbyr bolig", "bolig tilbys", "gratis bolig", "bolig er inkludert", "bolig på stedet", "firmahytte", "brakke". SET FALSE if accommodation is NOT mentioned or is only available for a fee without employer subsidy.
 - requires_norwegian: boolean — Decision rule:
   SET TRUE if Norwegian proficiency is explicitly required: "kreves norsk", "må beherske norsk", "norsk i tale og skrift", "flytende norsk", "gode norskkunnskaper", "kommunikasjon på norsk", "snakke norsk", "forstå norsk". Also TRUE if Norwegian is primary AND English is only a bonus joined by "og gjerne", "og helst", "og fortrinnsvis" (e.g. "norsk og gjerne engelsk" = Norwegian is required, English is a bonus).
   SET FALSE only if (a) English alone is sufficient — explicit "eller" alternatives: "norsk eller engelsk", "norsk or english", "engelsk eller norsk", "norsk/engelsk" meaning EITHER language works; OR (b) Norwegian is only an advantage with no mandatory requirement: "fordel", "ønskelig", "pluss", "en fordel", "er ønskelig", "er en fordel".
@@ -103,6 +105,11 @@ async function processJob(
     result.requires_norwegian = true;
   }
 
+  // Regex safety-net for accommodation (catches obvious cases even if Claude misses)
+  if (!result.includes_accommodation && norwegianTextIncludesAccommodation(description)) {
+    result.includes_accommodation = true;
+  }
+
   return result;
 }
 
@@ -135,6 +142,34 @@ function czechTextRequiresNorwegian(czechText: string): boolean {
   return requiredPatterns.some((p) => p.test(t));
 }
 
+function norwegianTextIncludesAccommodation(text: string): boolean {
+  const t = text.toLowerCase();
+
+  // Negative patterns — explicitly deny accommodation or it's the workplace, not staff housing
+  const negatives = [
+    /tilbyr\s+dessverre\s+ikke\s+(overnatting|bolig|losji)/,
+    /ikke\s+(tilbyr|inkludert)\s+(bolig|losji|overnatting)/,
+    /boligen\s+tilbyr\s+heldøgns/,   // care home — bolig is the facility, not staff housing
+    /tilgang\s+til\s+firmahytter/,    // company holiday cabins as perk ≠ on-site accommodation
+  ];
+  if (negatives.some((p) => p.test(t))) return false;
+
+  return [
+    /\blosji\b/,
+    /\binnkvartering\b/,
+    /\bboplass\b/,
+    /\bhusvære\b/,
+    /kost\s+og\s+losji/,
+    /bolig\s+(tilbys|inkludert|er\s+inkludert|på\s+stedet)/,
+    /vi\s+tilbyr\s+bolig/,
+    /gratis\s+bolig/,
+    /personalbolig/,
+    /\bfirmahytte\b/,  // word boundary — won't match "firmahytter"
+    /\bbrakke\b/,
+    /hybel\s+tilbys/,
+  ].some((p) => p.test(t));
+}
+
 // Process up to CONCURRENCY jobs in parallel
 const CONCURRENCY = 8;
 
@@ -145,16 +180,27 @@ export async function translateBatch(
 
   const results: JobTranslations[] = new Array(items.length);
 
+  const fallback: JobTranslations = {
+    title_cs: "", title_sk: "", description_cs: "", description_sk: "",
+    requires_norwegian: false, includes_accommodation: false,
+    contact_name: null, contact_email: null, contact_phone: null,
+  };
+
   for (let i = 0; i < items.length; i += CONCURRENCY) {
     const chunk = items.slice(i, i + CONCURRENCY);
-    const chunkResults = await Promise.all(
+    const chunkResults = await Promise.allSettled(
       chunk.map((item) => {
         const knownContacts = extractContactFromList(item.contactList);
         return processJob(item.title, item.description, item.company ?? "", knownContacts);
       })
     );
     chunkResults.forEach((r, j) => {
-      results[i + j] = r;
+      if (r.status === "fulfilled") {
+        results[i + j] = r.value;
+      } else {
+        console.error("translateBatch item failed:", r.reason?.message ?? r.reason);
+        results[i + j] = fallback;
+      }
     });
   }
 

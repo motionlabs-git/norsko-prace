@@ -29,6 +29,7 @@ interface JobFiltersProps {
   engagementType?: string;
   city?: string;
   cities?: string[];
+  accommodation?: boolean;
 }
 
 export function JobFilters({
@@ -37,6 +38,7 @@ export function JobFilters({
   engagementType = "",
   city = "",
   cities = [],
+  accommodation = false,
 }: JobFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -55,6 +57,17 @@ export function JobFilters({
     },
     [router, pathname, searchParams]
   );
+
+  const toggleAccommodation = useCallback(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (accommodation) {
+      params.delete("ubytovani");
+    } else {
+      params.set("ubytovani", "1");
+    }
+    params.delete("page");
+    router.push(`${pathname}?${params.toString()}`);
+  }, [router, pathname, searchParams, accommodation]);
 
   const selectClass =
     "w-full sm:w-auto rounded-full border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] cursor-pointer";
@@ -104,6 +117,21 @@ export function JobFilters({
           ))}
         </select>
       )}
+
+      <button
+        onClick={toggleAccommodation}
+        className={`flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer ${
+          accommodation
+            ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
+            : "border-[var(--color-border)] bg-white text-[var(--color-text)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+        }`}
+      >
+        <svg viewBox="0 0 24 24" fill={accommodation ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+        {locale === "cs" ? "S ubytováním" : "S ubytovaním"}
+      </button>
 
     </div>
   );

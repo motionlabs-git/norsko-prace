@@ -84,6 +84,7 @@ export interface NavVacancy {
 export interface Job {
   id: string;
   nav_id: string;
+  source: "nav" | "finn";
   slug: string;
   title_no: string | null;
   title_cs: string | null;
@@ -110,6 +111,7 @@ export interface Job {
   is_premium: boolean;
   is_active: boolean;
   requires_norwegian: boolean;
+  includes_accommodation: boolean;
   contact_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
@@ -135,6 +137,8 @@ export interface LocalizedJob {
   applicationUrl: string | null;
   isFeatured: boolean;
   isPremium: boolean;
+  includesAccommodation: boolean;
+  source: "nav" | "finn";
 }
 
 // Blog types

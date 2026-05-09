@@ -32,7 +32,10 @@ export function Navbar({ locale, user }: NavbarProps) {
   // Close dropdown on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setDropdownOpen(false);
       }
     }
@@ -48,8 +51,13 @@ export function Navbar({ locale, user }: NavbarProps) {
   }
 
   const initials = user?.fullName
-    ? user.fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
-    : user?.email.slice(0, 2).toUpperCase() ?? "?";
+    ? user.fullName
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : (user?.email.slice(0, 2).toUpperCase() ?? "?");
 
   return (
     <>
@@ -62,7 +70,10 @@ export function Navbar({ locale, user }: NavbarProps) {
             className="flex items-center relative z-50"
           >
             {/* Mobile: jen vlajková ikonka (ořez na 36×36) */}
-            <span className="flex md:hidden overflow-hidden" style={{ width: 36, height: 36 }}>
+            <span
+              className="flex md:hidden overflow-hidden"
+              style={{ width: 36, height: 36 }}
+            >
               <Image
                 src="/images/norsko-prace-logo.svg"
                 alt="NorskoPráce"
@@ -88,7 +99,9 @@ export function Navbar({ locale, user }: NavbarProps) {
             <Link
               href="/prace"
               className={`text-sm font-medium transition-colors hover:text-[var(--color-primary)] ${
-                isActive("/prace") ? "text-[var(--color-primary)]" : "text-[var(--color-text-muted)]"
+                isActive("/prace")
+                  ? "text-[var(--color-primary)]"
+                  : "text-[var(--color-text-muted)]"
               }`}
             >
               {t("jobs")}
@@ -96,7 +109,9 @@ export function Navbar({ locale, user }: NavbarProps) {
             <Link
               href="/pruvodce"
               className={`text-sm font-medium transition-colors hover:text-[var(--color-primary)] ${
-                isActive("/pruvodce") ? "text-[var(--color-primary)]" : "text-[var(--color-text-muted)]"
+                isActive("/pruvodce")
+                  ? "text-[var(--color-primary)]"
+                  : "text-[var(--color-text-muted)]"
               }`}
             >
               {t("guides")}
@@ -104,7 +119,9 @@ export function Navbar({ locale, user }: NavbarProps) {
             <Link
               href="/blog"
               className={`text-sm font-medium transition-colors hover:text-[var(--color-primary)] ${
-                isActive("/blog") ? "text-[var(--color-primary)]" : "text-[var(--color-text-muted)]"
+                isActive("/blog")
+                  ? "text-[var(--color-primary)]"
+                  : "text-[var(--color-text-muted)]"
               }`}
             >
               {t("blog")}
@@ -114,7 +131,7 @@ export function Navbar({ locale, user }: NavbarProps) {
           {/* Right side */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Locale switcher */}
-            <div className="flex items-center rounded-full border border-[var(--color-border)] overflow-hidden text-xs font-semibold">
+            <div className="hidden md:flex items-center rounded-full border border-[var(--color-border)] overflow-hidden text-xs font-semibold">
               <a
                 href={`/cs${localePath}`}
                 className={`px-3 py-1.5 transition-colors ${
@@ -139,18 +156,22 @@ export function Navbar({ locale, user }: NavbarProps) {
 
             {/* Auth — desktop */}
             {user ? (
-              <div className="relative hidden md:block" ref={dropdownRef}>
+              <div className="relative hidden md:block " ref={dropdownRef}>
                 <button
                   onClick={() => setDropdownOpen((o) => !o)}
-                  className="flex items-center justify-center w-9 h-9 rounded-full bg-[var(--color-primary)] text-white text-xs font-bold transition hover:opacity-90"
+                  className="cursor-pointer flex items-center justify-center w-9 h-9 rounded-full bg-[var(--color-primary)] text-white text-xs font-bold transition hover:opacity-90"
                 >
                   {initials}
                 </button>
                 {dropdownOpen && (
-                  <div className="absolute right-0 top-11 w-48 rounded-2xl bg-white shadow-lg border border-[var(--color-border)] py-1 z-50">
+                  <div className="absolute overflow-hidden right-0 top-11 w-48 rounded-2xl bg-white shadow-lg border border-[var(--color-border)] py-1 z-50">
                     <div className="px-4 py-2.5 border-b border-[var(--color-border)]">
-                      <p className="text-xs font-semibold text-[var(--color-text)] truncate">{user.fullName ?? user.email}</p>
-                      <p className="text-xs text-[var(--color-text-muted)] truncate">{user.email}</p>
+                      <p className="text-xs font-semibold text-[var(--color-text)] truncate">
+                        {user.fullName ?? user.email}
+                      </p>
+                      <p className="text-xs text-[var(--color-text-muted)] truncate">
+                        {user.email}
+                      </p>
                     </div>
                     <Link
                       href="/oblibene"
@@ -204,11 +225,19 @@ export function Navbar({ locale, user }: NavbarProps) {
               <span className="relative flex items-center justify-center w-4 h-4">
                 <span
                   className="absolute block h-[2px] w-4 rounded-full bg-current transition-all duration-300"
-                  style={{ transform: menuOpen ? "translateY(0) rotate(45deg)" : "translateY(-4px)" }}
+                  style={{
+                    transform: menuOpen
+                      ? "translateY(0) rotate(45deg)"
+                      : "translateY(-4px)",
+                  }}
                 />
                 <span
                   className="absolute block h-[2px] w-4 rounded-full bg-current transition-all duration-300"
-                  style={{ transform: menuOpen ? "translateY(0) rotate(-45deg)" : "translateY(4px)" }}
+                  style={{
+                    transform: menuOpen
+                      ? "translateY(0) rotate(-45deg)"
+                      : "translateY(4px)",
+                  }}
                 />
               </span>
             </button>
@@ -221,7 +250,8 @@ export function Navbar({ locale, user }: NavbarProps) {
         className="fixed inset-0 z-40 flex flex-col md:hidden"
         style={{
           background: "linear-gradient(135deg, #001849 0%, #003087 100%)",
-          transition: "opacity 0.35s cubic-bezier(0.32,0.72,0,1), transform 0.35s cubic-bezier(0.32,0.72,0,1)",
+          transition:
+            "opacity 0.35s cubic-bezier(0.32,0.72,0,1), transform 0.35s cubic-bezier(0.32,0.72,0,1)",
           opacity: menuOpen ? 1 : 0,
           transform: menuOpen ? "translateY(0)" : "translateY(-100%)",
           pointerEvents: menuOpen ? "auto" : "none",
@@ -239,11 +269,23 @@ export function Navbar({ locale, user }: NavbarProps) {
               { href: "/prace", label: t("jobs"), delay: "0.1s" },
               { href: "/pruvodce", label: t("guides"), delay: "0.18s" },
               { href: "/blog", label: t("blog"), delay: "0.26s" },
-              ...(user ? [
-                { href: "/oblibene", label: locale === "cs" ? "Oblíbené" : "Obľúbené", delay: "0.34s" },
-                { href: "/profil", label: locale === "cs" ? "Profil" : "Profil", delay: "0.40s" },
-              ] : []),
-              ...(user?.role === "admin" ? [{ href: "/admin", label: "Admin", delay: "0.46s" }] : []),
+              ...(user
+                ? [
+                    {
+                      href: "/oblibene",
+                      label: locale === "cs" ? "Oblíbené" : "Obľúbené",
+                      delay: "0.34s",
+                    },
+                    {
+                      href: "/profil",
+                      label: locale === "cs" ? "Profil" : "Profil",
+                      delay: "0.40s",
+                    },
+                  ]
+                : []),
+              ...(user?.role === "admin"
+                ? [{ href: "/admin", label: "Admin", delay: "0.46s" }]
+                : []),
             ].map(({ href, label, delay }) => (
               <Link
                 key={href}
@@ -257,10 +299,12 @@ export function Navbar({ locale, user }: NavbarProps) {
                   transitionDelay: menuOpen ? delay : "0s",
                 }}
               >
-                <span className={`text-2xl font-extrabold tracking-tight ${isActive(href) ? "text-[#C8102E]" : "text-white/70"}`}>
+                <span
+                  className={`text-2xl font-extrabold tracking-tight transition-colors ${isActive(href) ? "text-white" : "text-white/40"}`}
+                >
                   {label}
                 </span>
-                <span className="text-white/30 text-2xl">→</span>
+                <span className={`text-2xl transition-opacity ${isActive(href) ? "opacity-100 text-white" : "opacity-30 text-white"}`}>→</span>
               </Link>
             ))}
           </nav>
@@ -276,7 +320,10 @@ export function Navbar({ locale, user }: NavbarProps) {
           >
             {user ? (
               <button
-                onClick={() => { setMenuOpen(false); handleLogout(); }}
+                onClick={() => {
+                  setMenuOpen(false);
+                  handleLogout();
+                }}
                 className="w-full rounded-full border border-white/30 py-3.5 text-sm font-bold text-white/80 hover:text-white transition"
               >
                 {locale === "cs" ? "Odhlásit se" : "Odhlásiť sa"}
@@ -292,11 +339,17 @@ export function Navbar({ locale, user }: NavbarProps) {
             )}
 
             <div className="mt-5 flex items-center justify-center gap-2">
-              <a href={`/cs${localePath}`} className={`rounded-full px-5 py-2 text-sm font-semibold transition-colors ${locale === "cs" ? "bg-white/15 text-white" : "text-white/50 hover:text-white/80"}`}>
+              <a
+                href={`/cs${localePath}`}
+                className={`rounded-full px-5 py-2 text-sm font-semibold transition-colors ${locale === "cs" ? "bg-white/15 text-white" : "text-white/50 hover:text-white/80"}`}
+              >
                 🇨🇿 Česky
               </a>
               <span className="text-white/20">·</span>
-              <a href={`/sk${localePath}`} className={`rounded-full px-5 py-2 text-sm font-semibold transition-colors ${locale === "sk" ? "bg-white/15 text-white" : "text-white/50 hover:text-white/80"}`}>
+              <a
+                href={`/sk${localePath}`}
+                className={`rounded-full px-5 py-2 text-sm font-semibold transition-colors ${locale === "sk" ? "bg-white/15 text-white" : "text-white/50 hover:text-white/80"}`}
+              >
                 🇸🇰 Slovensky
               </a>
             </div>

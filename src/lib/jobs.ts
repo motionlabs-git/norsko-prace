@@ -1,5 +1,6 @@
 import { createServerSupabase, supabaseAdmin } from "./supabase";
 import type { Job, LocalizedJob, Locale, NavVacancy } from "@/types";
+import type { FinnJob } from "./finn-api";
 
 // ── Category mapping (NAV Norwegian → display) ─────────────────────────────
 export const CATEGORY_MAP: Record<string, { label: string; icon: string; color: string; badgeClass: string; accentClass: string; arrowClass: string }> = {
@@ -112,6 +113,7 @@ export async function getJobs({
   engagementType,
   city,
   norwegianOk = true,
+  accommodation,
   page = 1,
   pageSize = 20,
 }: {
@@ -119,6 +121,7 @@ export async function getJobs({
   engagementType?: string;
   city?: string;
   norwegianOk?: boolean;
+  accommodation?: boolean;
   page?: number;
   pageSize?: number;
 }): Promise<{ jobs: Job[]; total: number }> {
@@ -133,6 +136,7 @@ export async function getJobs({
   if (engagementType) query = query.ilike("engagement_type", engagementType);
   if (city) query = query.eq("location_city", city);
   if (!norwegianOk) query = query.eq("requires_norwegian", false);
+  if (accommodation) query = query.eq("includes_accommodation", true);
 
   const from = (page - 1) * pageSize;
   query = query.range(from, from + pageSize - 1);
@@ -254,6 +258,8 @@ export function localizeJob(job: Job, locale: Locale): LocalizedJob {
     applicationUrl: job.application_url,
     isFeatured: job.is_featured,
     isPremium: job.is_premium,
+    includesAccommodation: job.includes_accommodation,
+    source: (job.source ?? "nav") as "nav" | "finn",
   };
 }
 
@@ -301,7 +307,7 @@ export async function getUserFavoriteIds(userId: string): Promise<string[]> {
 
 export function vacancyToJobRow(
   vacancy: NavVacancy,
-  translations: { title_cs: string; title_sk: string; description_cs: string; description_sk: string; requires_norwegian?: boolean; contact_name?: string | null; contact_email?: string | null; contact_phone?: string | null }
+  translations: { title_cs: string; title_sk: string; description_cs: string; description_sk: string; requires_norwegian?: boolean; includes_accommodation?: boolean; contact_name?: string | null; contact_email?: string | null; contact_phone?: string | null }
 ): Omit<Job, "id" | "created_at" | "updated_at"> {
   const v = vacancy.ad_content!;
   const loc = v.workLocations?.[0];
@@ -310,6 +316,7 @@ export function vacancyToJobRow(
 
   return {
     nav_id: vacancy.uuid,
+    source: "nav" as const,
     slug,
     title_no: v.title,
     title_cs: translations.title_cs,
@@ -336,6 +343,7 @@ export function vacancyToJobRow(
     is_premium: false,
     is_active: vacancy.status === "ACTIVE",
     requires_norwegian: translations.requires_norwegian ?? false,
+    includes_accommodation: translations.includes_accommodation ?? false,
     contact_name: translations.contact_name ?? null,
     contact_email: translations.contact_email ?? null,
     contact_phone: translations.contact_phone ?? null,
@@ -346,9 +354,16 @@ export async function upsertJobs(
   rows: ReturnType<typeof vacancyToJobRow>[]
 ): Promise<number> {
   const db = supabaseAdmin();
+  // Deduplicate by nav_id — feed can contain duplicates within a single page
+  const seen = new Set<string>();
+  const unique = rows.filter((r) => {
+    if (seen.has(r.nav_id)) return false;
+    seen.add(r.nav_id);
+    return true;
+  });
   const { error, data } = await db
     .from("jobs")
-    .upsert(rows, { onConflict: "nav_id", ignoreDuplicates: false })
+    .upsert(unique, { onConflict: "source,nav_id", ignoreDuplicates: false })
     .select("id");
 
   if (error) {
@@ -361,12 +376,66 @@ export async function upsertJobs(
 export async function deactivateJobs(navIds: string[]): Promise<void> {
   if (navIds.length === 0) return;
   const db = supabaseAdmin();
-  const { error } = await db
-    .from("jobs")
-    .update({ is_active: false })
-    .in("nav_id", navIds);
+  const CHUNK = 500;
+  for (let i = 0; i < navIds.length; i += CHUNK) {
+    const chunk = navIds.slice(i, i + CHUNK);
+    const { error } = await db
+      .from("jobs")
+      .update({ is_active: false })
+      .in("nav_id", chunk);
+    if (error) console.error("deactivateJobs error:", error.message);
+  }
+}
 
-  if (error) console.error("deactivateJobs error:", error.message);
+export function finnJobToRow(
+  job: FinnJob,
+  translations: { title_cs: string; title_sk: string; description_cs: string; description_sk: string; requires_norwegian?: boolean; includes_accommodation?: boolean; contact_name?: string | null; contact_email?: string | null; contact_phone?: string | null }
+): Omit<Job, "id" | "created_at" | "updated_at"> {
+  const slug =
+    slugify(job.title).slice(0, 60) + "-finn-" + job.finnId;
+
+  const FINN_ENGAGEMENT: Record<string, string> = {
+    TEMPORARY: "Midlertidig",
+    PART_TIME: "Deltid",
+    FULL_TIME: "Fast",
+    SEASONAL: "Sesong",
+    OTHER: "Jiné",
+  };
+
+  return {
+    nav_id: `finn-${job.finnId}`,
+    source: "finn",
+    slug,
+    title_no: job.title,
+    title_cs: translations.title_cs,
+    title_sk: translations.title_sk,
+    description_no: job.description,
+    description_cs: translations.description_cs,
+    description_sk: translations.description_sk,
+    company: job.company ?? null,
+    location_city: job.locationCity ?? null,
+    location_county: null,
+    category_level1: null,
+    category_level2: null,
+    engagement_type: FINN_ENGAGEMENT[job.employmentType ?? ""] ?? null,
+    extent: null,
+    sector: null,
+    salary: null,
+    position_count: null,
+    application_due: null,
+    published_at: job.datePosted ?? null,
+    expires_at: job.validThrough ?? null,
+    source_url: job.sourceUrl,
+    application_url: job.applicationUrl ?? null,
+    is_featured: false,
+    is_premium: false,
+    is_active: true,
+    requires_norwegian: translations.requires_norwegian ?? false,
+    includes_accommodation: translations.includes_accommodation ?? false,
+    contact_name: translations.contact_name ?? null,
+    contact_email: translations.contact_email ?? null,
+    contact_phone: translations.contact_phone ?? null,
+  };
 }
 
 // ── Utils ────────────────────────────────────────────────────────────────────

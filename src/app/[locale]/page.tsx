@@ -236,24 +236,35 @@ function HowItWorks() {
   const steps = [
     {
       num: "01",
-      color: "#C8102E",
-      bg: "rgba(200,16,46,0.15)",
-      title: "Najdi inzerát",
-      desc: "Procházej stovky sezónních nabídek přeložených do češtiny a slovenštiny.",
+      icon: "🔍",
+      title: "Najdi inzerát v češtině",
+      desc: "Procházej stovky sezónních nabídek z Norska přeložených do češtiny a slovenštiny. Žádná norština potřeba.",
+      tags: ["Zemědělství", "Gastronomie", "Stavebnictví", "Doprava"],
+      accent: "#C8102E",
     },
     {
       num: "02",
-      color: "#ffffff",
-      bg: "rgba(255,255,255,0.1)",
-      title: "Přihlaš se",
-      desc: "Klikni na odkaz a přihlaš se přímo na norském pracovním portálu.",
+      icon: "📩",
+      title: "Přihlaš se přímo online",
+      desc: "Každý inzerát obsahuje přímý odkaz na norský portál nebo kontakt na zaměstnavatele. Přihláška zabere pár minut.",
+      tags: ["Přímý odkaz", "Email zaměstnavateli", "Bez agentury"],
+      accent: "#7c3aed",
     },
     {
       num: "03",
-      color: "#003087",
-      bg: "rgba(0,48,135,0.35)",
-      title: "Odjeď do Norska",
-      desc: "Naše průvodce tě provedou D-numberem, BankID a životem na severu.",
+      icon: "📋",
+      title: "Připrav se s průvodci",
+      desc: "Jak vyřídit D-number, BankID, kde bydlet a co vzít s sebou — vše přehledně na jednom místě.",
+      tags: ["D-number", "BankID", "Ubytování", "Daně"],
+      accent: "#0891b2",
+    },
+    {
+      num: "04",
+      icon: "✈️",
+      title: "Odjeď a začni vydělávat",
+      desc: "Norské mzdy jsou výrazně vyšší než v Česku — průměrná brigáda ti vydělá 2–3× více než doma.",
+      tags: ["Průměr 200–250 NOK/hod", "Ubytování od zaměstnavatele", "Sezóna 3–6 měsíců"],
+      accent: "#C8102E",
     },
   ];
 
@@ -264,44 +275,79 @@ function HowItWorks() {
       style={{ background: "#0d1117" }}
     >
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -right-40 -top-40 h-[600px] w-[600px] rounded-full bg-[#003087] opacity-15" />
-        <div className="absolute -left-20 bottom-0 h-64 w-64 rounded-full bg-[#C8102E] opacity-10" />
+        <div className="absolute -right-40 -top-40 h-[600px] w-[600px] rounded-full bg-[#003087] opacity-10" />
+        <div className="absolute -left-20 bottom-0 h-64 w-64 rounded-full bg-[#C8102E] opacity-8" />
       </div>
 
-      <div className="relative mx-auto max-w-6xl px-4 md:px-8">
+      <div className="relative mx-auto max-w-3xl px-4 md:px-8">
         <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 backdrop-blur-sm border border-white/15">
           <span className="h-1.5 w-1.5 rounded-full bg-[#C8102E]" />
           <span className="text-xs font-bold uppercase tracking-widest text-white/80">
             Jak to funguje
           </span>
         </div>
-        <h2 className="mb-16 mt-4 text-3xl font-extrabold tracking-tight text-white md:text-4xl">
-          Práce v Norsku ve třech krocích
+        <h2 className="mb-14 mt-4 text-3xl font-extrabold tracking-tight text-white md:text-4xl">
+          Od inzerátu k výplatě<br />
+          <span className="text-white/40">ve čtyřech krocích</span>
         </h2>
 
-        <div className="grid gap-10 md:grid-cols-3">
-          {steps.map((s) => (
-            <div key={s.num} className="group">
-              <div
-                className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl"
-                style={{ background: s.bg }}
-              >
-                <span
-                  className="text-xl font-extrabold"
-                  style={{ color: s.color }}
-                >
-                  {s.num}
-                </span>
+        {/* Timeline */}
+        <div className="relative">
+          {/* Vertical line */}
+          <div
+            className="absolute left-5 top-0 bottom-0 w-px md:left-6"
+            style={{ background: "linear-gradient(to bottom, #C8102E 0%, #7c3aed 40%, #0891b2 70%, #C8102E 100%)" }}
+          />
+
+          <div className="space-y-0">
+            {steps.map((step, i) => (
+              <div key={step.num} className="relative flex gap-8 md:gap-10 pb-12 last:pb-0">
+                {/* Circle on timeline */}
+                <div className="relative flex-shrink-0">
+                  <div
+                    className="relative z-10 flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full border-2 text-white font-extrabold text-sm"
+                    style={{ borderColor: step.accent, background: "#0d1117", color: step.accent }}
+                  >
+                    {step.num}
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 pt-1.5 pb-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-2xl">{step.icon}</span>
+                    <h3 className="text-lg font-bold text-white md:text-xl">{step.title}</h3>
+                  </div>
+                  <p className="text-white/50 leading-relaxed mb-4 text-sm md:text-base">
+                    {step.desc}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {step.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full px-3 py-1 text-xs font-medium text-white/60 border border-white/10"
+                        style={{ background: "rgba(255,255,255,0.04)" }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Connector to next step */}
+                  {i < steps.length - 1 && (
+                    <div className="mt-8 flex items-center gap-2 text-xs text-white/20 select-none">
+                      <div className="h-px flex-1 bg-white/10" />
+                      <span>pak</span>
+                      <div className="h-px flex-1 bg-white/10" />
+                    </div>
+                  )}
+                </div>
               </div>
-              <h3 className="mb-3 text-xl font-bold text-white">{s.title}</h3>
-              <p className="text-base leading-relaxed text-white/50">
-                {s.desc}
-              </p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
-        <div className="mt-16 flex justify-center">
+        <div className="mt-14 flex justify-center">
           <Link
             href="/prace"
             className="inline-flex items-center gap-2 rounded-full bg-[#C8102E] px-8 py-4 text-base font-bold text-white shadow-lg hover:bg-[#9e0b21] hover:shadow-xl"

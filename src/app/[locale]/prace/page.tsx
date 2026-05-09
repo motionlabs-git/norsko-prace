@@ -8,6 +8,96 @@ import type { Locale } from "@/types";
 
 export const revalidate = 1800;
 
+function getPaginationRange(current: number, total: number): (number | null)[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+
+  const left = Math.max(2, current - 2);
+  const right = Math.min(total - 1, current + 2);
+  const range: (number | null)[] = [1];
+
+  if (left > 2) range.push(null);
+  for (let i = left; i <= right; i++) range.push(i);
+  if (right < total - 1) range.push(null);
+  range.push(total);
+
+  return range;
+}
+
+function Pagination({
+  page,
+  totalPages,
+  buildHref,
+}: {
+  page: number;
+  totalPages: number;
+  buildHref: (p: number) => Parameters<typeof Link>[0]["href"];
+}) {
+  const range = getPaginationRange(page, totalPages);
+  const btnBase = "flex h-9 min-w-9 items-center justify-center rounded-full px-3 text-sm font-semibold transition-colors";
+
+  return (
+    <div className="mt-12 flex items-center justify-center gap-1.5">
+      {page > 1 ? (
+        <Link
+          href={buildHref(page - 1)}
+          className={`${btnBase} border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-primary-light)] hover:text-[var(--color-primary)]`}
+          aria-label="Předchozí stránka"
+        >
+          ←
+        </Link>
+      ) : (
+        <span className={`${btnBase} border border-[var(--color-border)] text-[var(--color-border)] cursor-not-allowed`}>←</span>
+      )}
+
+      {range.map((p, i) =>
+        p === null ? (
+          <span key={`ellipsis-${i}`} className="flex h-9 w-9 items-center justify-center text-sm text-[var(--color-text-muted)]">
+            …
+          </span>
+        ) : p === page ? (
+          <span key={p} className={`${btnBase} bg-[var(--color-primary)] text-white cursor-default`}>
+            {p}
+          </span>
+        ) : (
+          <Link
+            key={p}
+            href={buildHref(p)}
+            className={`${btnBase} border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-primary-light)] hover:text-[var(--color-primary)]`}
+          >
+            {p}
+          </Link>
+        )
+      )}
+
+      {page < totalPages ? (
+        <Link
+          href={buildHref(page + 1)}
+          className={`${btnBase} border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-primary-light)] hover:text-[var(--color-primary)]`}
+          aria-label="Další stránka"
+        >
+          →
+        </Link>
+      ) : (
+        <span className={`${btnBase} border border-[var(--color-border)] text-[var(--color-border)] cursor-not-allowed`}>→</span>
+      )}
+    </div>
+  );
+}
+
+function buildQuery(params: {
+  category: string;
+  engagementType: string;
+  city: string;
+  page: number;
+}) {
+  const q: Record<string, string> = {};
+  if (params.category) q.category = params.category;
+  if (params.engagementType) q.type = params.engagementType;
+  if (params.city) q.city = params.city;
+  if (params.page > 1) q.page = String(params.page);
+  return q;
+}
+
 interface Props {
   params: Promise<{ locale: string }>;
   searchParams: Promise<{
@@ -15,6 +105,7 @@ interface Props {
     type?: string;
     city?: string;
     page?: string;
+    ubytovani?: string;
   }>;
 }
 
@@ -41,6 +132,7 @@ export default async function PracePage({ params, searchParams }: Props) {
   const category = filters.category ?? "";
   const engagementType = filters.type ?? "";
   const city = filters.city ?? "";
+  const accommodation = filters.ubytovani === "1";
   const page = Math.max(1, parseInt(filters.page ?? "1", 10));
 
   const supabase = await createClient();
@@ -61,6 +153,7 @@ export default async function PracePage({ params, searchParams }: Props) {
       engagementType: engagementType || undefined,
       city: city || undefined,
       norwegianOk: false,
+      accommodation: accommodation || undefined,
       page,
       pageSize: PAGE_SIZE,
     }),
@@ -186,6 +279,7 @@ export default async function PracePage({ params, searchParams }: Props) {
               engagementType={engagementType}
               city={city}
               cities={cities}
+              accommodation={accommodation}
             />
             <p className="text-sm text-[var(--color-text-muted)]">
               {total}{" "}
@@ -226,33 +320,11 @@ export default async function PracePage({ params, searchParams }: Props) {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="mt-12 flex items-center justify-center gap-3">
-              {page > 1 && (
-                <Link
-                  href={{
-                    pathname: "/prace",
-                    query: buildQuery({ category, engagementType, city, page: page - 1 }),
-                  }}
-                  className="rounded-full border border-[var(--color-border)] px-5 py-2 text-sm font-semibold hover:bg-[var(--color-primary-light)] hover:text-[var(--color-primary)]"
-                >
-                  ← {isCs ? "Předchozí" : "Predchádzajúca"}
-                </Link>
-              )}
-              <span className="text-sm text-[var(--color-text-muted)]">
-                {page} / {totalPages}
-              </span>
-              {page < totalPages && (
-                <Link
-                  href={{
-                    pathname: "/prace",
-                    query: buildQuery({ category, engagementType, city, page: page + 1 }),
-                  }}
-                  className="rounded-full bg-[var(--color-primary)] px-5 py-2 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)]"
-                >
-                  {isCs ? "Další" : "Ďalšia"} →
-                </Link>
-              )}
-            </div>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              buildHref={(p) => ({ pathname: "/prace", query: buildQuery({ category, engagementType, city, page: p }) })}
+            />
           )}
         </div>
       </section>
@@ -260,16 +332,3 @@ export default async function PracePage({ params, searchParams }: Props) {
   );
 }
 
-function buildQuery(params: {
-  category: string;
-  engagementType: string;
-  city: string;
-  page: number;
-}) {
-  const q: Record<string, string> = {};
-  if (params.category) q.category = params.category;
-  if (params.engagementType) q.type = params.engagementType;
-  if (params.city) q.city = params.city;
-  if (params.page > 1) q.page = String(params.page);
-  return q;
-}

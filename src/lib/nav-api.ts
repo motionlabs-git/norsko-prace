@@ -42,7 +42,7 @@ async function getPublicToken(): Promise<string> {
 
   const res = await fetch(`${FEED_BASE_URL}/api/publicToken`, {
     headers: { Accept: "text/plain" },
-    next: { revalidate: 0 },
+    cache: "no-store",
   });
 
   if (!res.ok) {
@@ -79,7 +79,7 @@ export async function fetchFeedPage(
     headers["If-Modified-Since"] = new Date(sinceDate).toUTCString();
   }
 
-  const res = await fetch(url, { headers, next: { revalidate: 0 } });
+  const res = await fetch(url, { headers, cache: "no-store" });
 
   if (res.status === 304) {
     // Žádné nové inzeráty od posledního syncu
@@ -201,10 +201,15 @@ export async function iterateFeed(
       inactive += inactiveIds.length;
     }
 
-    // Stáhni detaily aktivních a filtruj sezónní
+    // Stáhni detaily aktivních a filtruj sezónní (max 8 concurrent)
     if (activeItems.length > 0) {
-      const detailPromises = activeItems.map((item) => fetchVacancyDetail(item.url));
-      const details = await Promise.all(detailPromises);
+      const CONCURRENCY = 8;
+      const details: (NavVacancy | null)[] = [];
+      for (let i = 0; i < activeItems.length; i += CONCURRENCY) {
+        const chunk = activeItems.slice(i, i + CONCURRENCY);
+        const results = await Promise.all(chunk.map((item) => fetchVacancyDetail(item.url)));
+        details.push(...results);
+      }
 
       const seasonal = details.filter(
         (v): v is NavVacancy => v !== null && isSeasonalJob(v)

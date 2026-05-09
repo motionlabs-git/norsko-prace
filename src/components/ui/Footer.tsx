@@ -67,8 +67,7 @@ export function Footer() {
               Hledáš práci?
             </h3>
             <p className="text-sm text-white/50 mb-4 leading-relaxed">
-              Tisíce sezónních nabídek přeložených do češtiny — aktualizováno
-              každý den.
+              Tisíce sezónních nabídek v češtině — aktualizováno každý den.
             </p>
             <Link
               href="/prace"

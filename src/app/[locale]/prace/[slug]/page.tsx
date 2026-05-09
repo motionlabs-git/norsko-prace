@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { getJobBySlug, localizeJob, getCategoryMeta, translateSector, getSimilarJobs } from "@/lib/jobs";
+import { getJobBySlug, localizeJob, getCategoryMeta, translateSector, getSimilarJobs, getUserFavoriteIds } from "@/lib/jobs";
 import { getApplicationType } from "@/lib/application-utils";
 import { SimilarJobsSlider } from "@/components/jobs/SimilarJobsSlider";
+import { FavoriteButton } from "@/components/jobs/FavoriteButton";
+import { createClient } from "@/utils/supabase/server";
 import type { Locale } from "@/types";
 
 
@@ -58,6 +60,11 @@ export default async function JobDetailPage({ params }: Props) {
   const meta = getCategoryMeta(job.category_level1);
   const isCs = locale === "cs";
   const appType = getApplicationType(localized.applicationUrl ?? null);
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const favoriteIds = user ? await getUserFavoriteIds(user.id) : [];
+  const isFavorited = favoriteIds.includes(job.id);
 
   const similarRaw = await getSimilarJobs(job.id, job.category_level1);
   const similarItems = similarRaw.map(j => ({
@@ -187,7 +194,7 @@ export default async function JobDetailPage({ params }: Props) {
 
             {/* Sidebar */}
             <div className="space-y-4">
-              {/* Apply CTA — desktop only (mobile has sticky bar) */}
+              {/* Apply CTA */}
               {localized.applicationUrl && (
                 <div className="space-y-2">
                   <a
@@ -204,6 +211,16 @@ export default async function JobDetailPage({ params }: Props) {
                     </p>
                   )}
                 </div>
+              )}
+
+              {/* Favorite */}
+              {user && (
+                <FavoriteButton
+                  jobId={job.id}
+                  initialFavorited={isFavorited}
+                  variant="detail"
+                  locale={locale}
+                />
               )}
 
               {/* Contact box */}

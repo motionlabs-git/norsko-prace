@@ -4,7 +4,11 @@
       "Bash(node scripts/sync-now.mjs --max-pages=1)",
       "Bash(kill 44310)",
       "Bash(pnpm add *)",
-      "WebFetch(domain:unsplash.com)"
+      "WebFetch(domain:unsplash.com)",
+      "Bash(tail -5 /tmp/norsko-dev2.log)",
+      "Read(//tmp/**)",
+      "Bash(curl -s --max-time 10 https://www.finn.no/api/2.0/ad/462616553 -H 'User-Agent: Mozilla/5.0' -H 'Accept: application/json')",
+      "Bash(curl -s --max-time 10 https://www.finn.no/job/ad/462616553.json -H 'User-Agent: Mozilla/5.0')"
     ]
   }
 }

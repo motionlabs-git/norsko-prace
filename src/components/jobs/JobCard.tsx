@@ -73,6 +73,11 @@ export function JobCard({ job, meta, locale, headingLevel = "h3", favoriteButton
                 {job.engagementType}
               </span>
             )}
+            {job.includesAccommodation && (
+              <span className="rounded-full bg-sky-50 px-2.5 py-0.5 text-xs font-semibold text-sky-700">
+                🏠 {isCs ? "S ubytováním" : "S ubytovaním"}
+              </span>
+            )}
             {appType === "portal" && (
               <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-xs font-semibold text-orange-700">
                 {isCs ? "Přes portál" : "Cez portál"}
