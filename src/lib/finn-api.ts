@@ -116,7 +116,7 @@ function parseJsonLd(html: string): Partial<FinnJob> | null {
       return {
         finnId,
         title: d.title ?? "",
-        description: rawDesc.slice(0, 3000),
+        description: rawDesc.slice(0, 2000),
         company: org.name ?? null,
         locationCity: loc.addressLocality ?? null,
         datePosted: d.datePosted ?? null,

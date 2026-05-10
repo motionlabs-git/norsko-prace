@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createClient } from "@/utils/supabase/client";
+import { togglePremiumAction } from "./actions";
 import type { Job } from "@/types";
 
 type AdminJob = Pick<Job, "id" | "title_cs" | "title_sk" | "company" | "category_level1" | "location_city" | "is_premium" | "is_active" | "published_at" | "requires_norwegian">;
@@ -15,14 +15,21 @@ export function AdminJobsTable({ jobs: initialJobs, locale }: Props) {
   const [jobs, setJobs] = useState(initialJobs);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "premium" | "inactive">("active");
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   const isCs = locale === "cs";
 
-  async function togglePremium(id: string, current: boolean) {
-    const supabase = createClient();
-    await supabase.from("jobs").update({ is_premium: !current }).eq("id", id);
-    setJobs((prev) => prev.map((j) => j.id === id ? { ...j, is_premium: !current } : j));
+  function togglePremium(id: string, current: boolean) {
+    const newValue = !current;
+    setJobs((prev) => prev.map((j) => j.id === id ? { ...j, is_premium: newValue } : j));
+    startTransition(async () => {
+      const result = await togglePremiumAction(id, newValue);
+      if (result.error) {
+        // Revert optimistic update on error
+        setJobs((prev) => prev.map((j) => j.id === id ? { ...j, is_premium: current } : j));
+        console.error("togglePremium failed:", result.error);
+      }
+    });
   }
 
   const filtered = jobs.filter((j) => {

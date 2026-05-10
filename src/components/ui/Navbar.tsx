@@ -107,6 +107,26 @@ export function Navbar({ locale, user }: NavbarProps) {
               {t("jobs")}
             </Link>
             <Link
+              href="/vybrane"
+              className={`text-sm font-medium transition-colors hover:text-[var(--color-primary)] ${
+                isActive("/vybrane")
+                  ? "text-[var(--color-primary)]"
+                  : "text-[var(--color-text-muted)]"
+              }`}
+            >
+              {t("selected")}
+            </Link>
+            <Link
+              href="/ubytovani"
+              className={`text-sm font-medium transition-colors hover:text-[var(--color-primary)] ${
+                isActive("/ubytovani")
+                  ? "text-[var(--color-primary)]"
+                  : "text-[var(--color-text-muted)]"
+              }`}
+            >
+              {t("accommodation")}
+            </Link>
+            <Link
               href="/pruvodce"
               className={`text-sm font-medium transition-colors hover:text-[var(--color-primary)] ${
                 isActive("/pruvodce")
@@ -267,8 +287,10 @@ export function Navbar({ locale, user }: NavbarProps) {
           <nav className="flex flex-col">
             {[
               { href: "/prace", label: t("jobs"), delay: "0.1s" },
-              { href: "/pruvodce", label: t("guides"), delay: "0.18s" },
-              { href: "/blog", label: t("blog"), delay: "0.26s" },
+              { href: "/vybrane", label: t("selected"), delay: "0.15s" },
+              { href: "/ubytovani", label: t("accommodation"), delay: "0.2s" },
+              { href: "/pruvodce", label: t("guides"), delay: "0.25s" },
+              { href: "/blog", label: t("blog"), delay: "0.32s" },
               ...(user
                 ? [
                     {

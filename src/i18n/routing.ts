@@ -16,5 +16,7 @@ export const routing = defineRouting({
     "/oblibene": "/oblibene",
     "/profil": "/profil",
     "/admin": "/admin",
+    "/vybrane": "/vybrane",
+    "/ubytovani": "/ubytovani",
   },
 });

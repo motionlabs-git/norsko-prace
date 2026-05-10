@@ -1,6 +1,8 @@
 {
   "nav": {
-    "jobs": "Práca",
+    "jobs": "Ponuky práce",
+    "selected": "Vybrané práce",
+    "accommodation": "Ubytovanie",
     "guides": "Sprievodcovia",
     "blog": "Blog",
     "about": "O projekte"

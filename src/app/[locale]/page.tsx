@@ -142,7 +142,7 @@ function HeroSection() {
         {/* Mini stats */}
         <div className="mt-12 flex flex-wrap gap-6 border-t border-white/15 pt-8">
           {[
-            { num: "1 200+", label: "aktivních inzerátů" },
+            { num: "200+", label: "aktivních inzerátů" },
             { num: "Denně", label: "aktualizováno" },
             { num: "100%", label: "přeloženo do češtiny" },
           ].map((s) => (
@@ -263,7 +263,11 @@ function HowItWorks() {
       icon: "✈️",
       title: "Odjeď a začni vydělávat",
       desc: "Norské mzdy jsou výrazně vyšší než v Česku — průměrná brigáda ti vydělá 2–3× více než doma.",
-      tags: ["Průměr 200–250 NOK/hod", "Ubytování od zaměstnavatele", "Sezóna 3–6 měsíců"],
+      tags: [
+        "Průměr 200–250 NOK/hod",
+        "Ubytování od zaměstnavatele",
+        "Sezóna 3–6 měsíců",
+      ],
       accent: "#C8102E",
     },
   ];
@@ -287,7 +291,8 @@ function HowItWorks() {
           </span>
         </div>
         <h2 className="mb-14 mt-4 text-3xl font-extrabold tracking-tight text-white md:text-4xl">
-          Od inzerátu k výplatě<br />
+          Od inzerátu k výplatě
+          <br />
           <span className="text-white/40">ve čtyřech krocích</span>
         </h2>
 
@@ -296,17 +301,27 @@ function HowItWorks() {
           {/* Vertical line */}
           <div
             className="absolute left-5 top-0 bottom-0 w-px md:left-6"
-            style={{ background: "linear-gradient(to bottom, #C8102E 0%, #7c3aed 40%, #0891b2 70%, #C8102E 100%)" }}
+            style={{
+              background:
+                "linear-gradient(to bottom, #C8102E 0%, #7c3aed 40%, #0891b2 70%, #C8102E 100%)",
+            }}
           />
 
           <div className="space-y-0">
             {steps.map((step, i) => (
-              <div key={step.num} className="relative flex gap-8 md:gap-10 pb-12 last:pb-0">
+              <div
+                key={step.num}
+                className="relative flex gap-8 md:gap-10 pb-12 last:pb-0"
+              >
                 {/* Circle on timeline */}
                 <div className="relative flex-shrink-0">
                   <div
                     className="relative z-10 flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full border-2 text-white font-extrabold text-sm"
-                    style={{ borderColor: step.accent, background: "#0d1117", color: step.accent }}
+                    style={{
+                      borderColor: step.accent,
+                      background: "#0d1117",
+                      color: step.accent,
+                    }}
                   >
                     {step.num}
                   </div>
@@ -316,7 +331,9 @@ function HowItWorks() {
                 <div className="flex-1 pt-1.5 pb-4">
                   <div className="flex items-center gap-3 mb-2">
                     <span className="text-2xl">{step.icon}</span>
-                    <h3 className="text-lg font-bold text-white md:text-xl">{step.title}</h3>
+                    <h3 className="text-lg font-bold text-white md:text-xl">
+                      {step.title}
+                    </h3>
                   </div>
                   <p className="text-white/50 leading-relaxed mb-4 text-sm md:text-base">
                     {step.desc}

@@ -20,7 +20,7 @@ export interface JobTranslations {
   contact_phone: string | null;
 }
 
-const SYSTEM_BASE = `You process Norwegian job ads for a Czech/Slovak job portal. For each job return a single JSON object — no markdown, no commentary, only raw JSON.
+const SYSTEM_BASE = `You process Norwegian job ads for a Czech/Slovak job portal. For each job return a single JSON object. CRITICAL: output ONLY the raw JSON object — no markdown, no code fences, no backticks, no commentary. Start your response with { and end with }.
 
 Required keys:
 - includes_accommodation: boolean — SET TRUE if the employer provides housing/accommodation as part of the offer. Look for: "losji", "bolig", "hybel", "overnatting inkludert", "innkvartering", "boplass", "husvære", "kost og losji", "vi tilbyr bolig", "bolig tilbys", "gratis bolig", "bolig er inkludert", "bolig på stedet", "firmahytte", "brakke". SET FALSE if accommodation is NOT mentioned or is only available for a fee without employer subsidy.
@@ -71,7 +71,7 @@ async function processJob(
 
   const message = await client.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 2048,
+    max_tokens: 4096,
     system,
     messages: [{ role: "user", content: userContent }],
   });

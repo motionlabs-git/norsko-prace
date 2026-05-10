@@ -137,15 +137,6 @@ export default async function PracePage({ params, searchParams }: Props) {
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  let isSubscriber = false;
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-    isSubscriber = profile?.role === "subscriber" || profile?.role === "admin";
-  }
 
   const [{ jobs, total }, cities, premiumJobs, favoriteIds] = await Promise.all([
     getJobs({
@@ -194,7 +185,7 @@ export default async function PracePage({ params, searchParams }: Props) {
             </span>
           </div>
           <h1 className="text-3xl font-extrabold text-white md:text-5xl">
-            {isCs ? "Práce v Norsku" : "Práca v Nórsku"}
+            {isCs ? "Nabídky práce v Norsku" : "Ponuky práce v Nórsku"}
           </h1>
           <p className="mt-3 text-white/65">
             {total > 0
@@ -209,65 +200,6 @@ export default async function PracePage({ params, searchParams }: Props) {
       </section>
 
       {/* Premium section */}
-      {localizedPremium.length > 0 && (
-        <section className="bg-white border-b border-[var(--color-border)] py-10">
-          <div className="mx-auto max-w-6xl px-4 md:px-8">
-            <div className="mb-6 flex items-center gap-3">
-              <span className="rounded-full bg-[var(--color-primary)] px-3 py-1 text-xs font-bold text-white uppercase tracking-wider">
-                ★ {isCs ? "Vybrané inzeráty" : "Vybrané inzeráty"}
-              </span>
-              <p className="text-sm text-[var(--color-text-muted)]">
-                {isCs ? "Ručně vybrané příležitosti" : "Ručne vybrané príležitosti"}
-              </p>
-            </div>
-
-            {isSubscriber ? (
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {localizedPremium.map(({ job, meta }) => (
-                  <JobCard
-                    key={job.id}
-                    job={job}
-                    meta={meta}
-                    locale={locale}
-                    headingLevel="h2"
-                    favoriteButton={user ? <FavoriteButton jobId={job.id} initialFavorited={favoriteIds.includes(job.id)} /> : undefined}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="relative">
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 select-none pointer-events-none">
-                  {localizedPremium.slice(0, 3).map(({ job, meta }) => (
-                    <div key={job.id} className="blur-sm opacity-60">
-                      <JobCard job={job} meta={meta} locale={locale} headingLevel="h2" />
-                    </div>
-                  ))}
-                </div>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <div className="rounded-2xl bg-white/95 backdrop-blur-sm shadow-lg border border-[var(--color-border)] px-8 py-6 text-center max-w-sm">
-                    <p className="text-2xl mb-2">🔒</p>
-                    <h3 className="text-base font-extrabold text-[var(--color-text)] mb-1">
-                      {isCs ? "Vybrané inzeráty" : "Vybrané inzeráty"}
-                    </h3>
-                    <p className="text-sm text-[var(--color-text-muted)] mb-4">
-                      {isCs
-                        ? "Prémiový přístup bude brzy k dispozici. Zaregistruj se zdarma."
-                        : "Prémiový prístup bude čoskoro k dispozícii. Zaregistruj sa zadarmo."}
-                    </p>
-                    <a
-                      href={`/${locale}/auth/register`}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 transition"
-                    >
-                      {isCs ? "Registrovat se zdarma" : "Registrovať sa zadarmo"}
-                    </a>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
       {/* Filters + results */}
       <section className="bg-[var(--color-bg)] py-10">
         <div className="mx-auto max-w-6xl px-4 md:px-8">
@@ -328,6 +260,102 @@ export default async function PracePage({ params, searchParams }: Props) {
           )}
         </div>
       </section>
+
+      {/* ── Vybrané inzeráty — dole jako nabídková sekce ── */}
+      {localizedPremium.length > 0 && (
+        <section className="border-t border-[var(--color-border)] bg-white py-12">
+          <div className="mx-auto max-w-6xl px-4 md:px-8">
+            <div className="mb-6 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="rounded-full bg-[var(--color-primary)] px-3 py-1 text-xs font-bold text-white uppercase tracking-wider">
+                  ★ {isCs ? "Vybrané inzeráty" : "Vybrané inzeráty"}
+                </span>
+                <p className="hidden text-sm text-[var(--color-text-muted)] sm:block">
+                  {isCs ? "Ručně vybrané příležitosti" : "Ručne vybrané príležitosti"}
+                </p>
+              </div>
+              {user && (
+                <Link
+                  href="/vybrane"
+                  className="text-xs font-semibold text-[var(--color-primary)] hover:underline"
+                >
+                  {isCs ? "Zobrazit vše →" : "Zobraziť všetko →"}
+                </Link>
+              )}
+            </div>
+
+            {user ? (
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {localizedPremium.map(({ job, meta }) => (
+                  <JobCard
+                    key={job.id}
+                    job={job}
+                    meta={meta}
+                    locale={locale}
+                    headingLevel="h2"
+                    favoriteButton={<FavoriteButton jobId={job.id} initialFavorited={favoriteIds.includes(job.id)} />}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="relative">
+                {/* Fake placeholder karty — žádná reálná data */}
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 select-none pointer-events-none blur-sm opacity-50">
+                  {[
+                    { title: isCs ? "Sezónní pracovník — rybprodukce" : "Sezónny pracovník — rybolov", location: "Bergen", badge: isCs ? "Zemědělství" : "Poľnohospodárstvo", icon: "🌾", badgeClass: "bg-[var(--color-primary-light)] text-[var(--color-primary)]", accentClass: "bg-[var(--color-primary)]", arrowClass: "bg-[var(--color-primary)] text-white", type: isCs ? "Sezónní" : "Sezónna" },
+                    { title: isCs ? "Kuchař / kuchařka — horský hotel" : "Kuchár / kuchárka — horský hotel", location: "Ålesund", badge: isCs ? "Gastronomie" : "Gastronómia", icon: "🍽️", badgeClass: "bg-yellow-50 text-yellow-800", accentClass: "bg-yellow-500", arrowClass: "bg-yellow-500 text-white", type: isCs ? "Sezónní" : "Sezónna" },
+                    { title: isCs ? "Stavební dělník — letní brigáda" : "Stavebný robotník — letná brigáda", location: "Stavanger", badge: isCs ? "Stavebnictví" : "Stavebníctvo", icon: "🏗️", badgeClass: "bg-[var(--color-accent-light)] text-[var(--color-accent)]", accentClass: "bg-[var(--color-accent)]", arrowClass: "bg-[var(--color-accent)] text-white", type: isCs ? "Brigáda" : "Brigáda" },
+                  ].map((fake) => (
+                    <div key={fake.title} className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-[var(--shadow-sm)]">
+                      <div className={`h-1 w-full flex-shrink-0 ${fake.accentClass}`} />
+                      <div className="flex flex-1 flex-col p-5">
+                        <span className={`mb-3 inline-block self-start rounded-full px-3 py-1 text-xs font-semibold ${fake.badgeClass}`}>
+                          {fake.icon} {fake.badge}
+                        </span>
+                        <p className="mb-1 text-base font-bold leading-snug text-[var(--color-text)] line-clamp-2">{fake.title}</p>
+                        <p className="text-sm text-[var(--color-text-muted)]">📍 {fake.location}</p>
+                        <div className="mt-auto flex items-center justify-between pt-4">
+                          <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${fake.badgeClass}`}>{fake.type}</span>
+                          <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ${fake.arrowClass}`}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M9 18l6-6-6-6" /></svg>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className="rounded-2xl bg-white/95 backdrop-blur-sm shadow-lg border border-[var(--color-border)] px-8 py-6 text-center max-w-xs">
+                    <p className="text-2xl mb-2">🔒</p>
+                    <h3 className="text-base font-extrabold text-[var(--color-text)] mb-1">
+                      {isCs ? "Vybrané inzeráty" : "Vybrané inzeráty"}
+                    </h3>
+                    <p className="text-sm text-[var(--color-text-muted)] mb-4">
+                      {isCs
+                        ? "Přihlas se zdarma a zobraz ručně vybrané nabídky."
+                        : "Prihlás sa zadarmo a zobraz ručne vybrané ponuky."}
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      <a
+                        href={`/${locale}/auth/register`}
+                        className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 transition"
+                      >
+                        {isCs ? "Registrovat se zdarma" : "Registrovať sa zadarmo"}
+                      </a>
+                      <a
+                        href={`/${locale}/auth/login`}
+                        className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition"
+                      >
+                        {isCs ? "Už mám účet — přihlásit se" : "Už mám účet — prihlásiť sa"}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
     </>
   );
 }

@@ -130,6 +130,7 @@ export async function getJobs({
     .from("jobs")
     .select("*", { count: "exact" })
     .eq("is_active", true)
+    .order("source", { ascending: false })
     .order("published_at", { ascending: false });
 
   if (category) query = query.eq("category_level1", category);
