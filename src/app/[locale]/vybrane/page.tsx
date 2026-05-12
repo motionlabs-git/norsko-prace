@@ -2,6 +2,7 @@ import { getPremiumJobs, localizeJob, getCategoryMeta, getUserFavoriteIds } from
 import { JobCard } from "@/components/jobs/JobCard";
 import { FavoriteButton } from "@/components/jobs/FavoriteButton";
 import { createClient } from "@/utils/supabase/server";
+import { buildAlternates } from "@/lib/seo";
 import type { Locale } from "@/types";
 
 export const revalidate = 1800;
@@ -20,6 +21,7 @@ export async function generateMetadata({ params }: Props) {
     description: isCs
       ? "Ručně vybrané pracovní příležitosti v Norsku pro česky mluvící uchazeče."
       : "Ručne vybrané pracovné príležitosti v Nórsku pre slovensky hovoriacich uchádzačov.",
+    alternates: buildAlternates(locale, "/vybrane"),
   };
 }
 
@@ -58,7 +60,7 @@ export default async function VybranePage({ params }: Props) {
       >
         <div className="mx-auto max-w-6xl px-4 md:px-8">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 backdrop-blur-sm border border-white/20">
-            <span className="text-sm">★</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-[#C8102E]" />
             <span className="text-xs font-bold uppercase tracking-widest text-white/80">
               {isCs ? "Kurátorský výběr" : "Kurátorský výber"}
             </span>
@@ -66,7 +68,7 @@ export default async function VybranePage({ params }: Props) {
           <h1 className="text-3xl font-extrabold text-white md:text-5xl">
             {isCs ? "Vybrané práce" : "Vybrané práce"}
           </h1>
-          <p className="mt-3 text-white/65">
+          <p className="mt-3 max-w-xl text-white/65">
             {user
               ? localized.length > 0
                 ? isCs ? `${localized.length} ručně vybraných pozic` : `${localized.length} ručne vybraných pozícií`

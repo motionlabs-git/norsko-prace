@@ -1,4 +1,5 @@
 import { Link } from "@/i18n/navigation";
+import { buildAlternates } from "@/lib/seo";
 
 export const revalidate = 86400;
 
@@ -16,6 +17,7 @@ export async function generateMetadata({ params }: Props) {
     description: isCs
       ? "Průvodce hledáním ubytování v Norsku. Hybel.no, Finn.no, tipy pro komunikaci s pronajímateli a co čekat."
       : "Sprievodca hľadaním ubytovania v Nórsku. Hybel.no, Finn.no, tipy pre komunikáciu s prenajímateľmi a čo očakávať.",
+    alternates: buildAlternates(locale, "/ubytovani"),
   };
 }
 
@@ -119,14 +121,12 @@ export default async function UbytovaniPage({ params }: Props) {
 
       {/* ── Hero ── */}
       <section
-        className="relative overflow-hidden py-20"
+        className="py-16"
         style={{ background: "linear-gradient(135deg, #001849 0%, #003087 100%)" }}
       >
-        <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-white opacity-[0.03]" />
-        <div className="pointer-events-none absolute -left-16 bottom-0 h-64 w-64 rounded-full bg-[var(--color-accent)] opacity-10" />
-        <div className="relative mx-auto max-w-6xl px-4 md:px-8">
+        <div className="mx-auto max-w-6xl px-4 md:px-8">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 backdrop-blur-sm border border-white/20">
-            <span>🏘️</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-[#C8102E]" />
             <span className="text-xs font-bold uppercase tracking-widest text-white/80">
               {isCs ? "Průvodce ubytováním" : "Sprievodca ubytovaním"}
             </span>
@@ -134,7 +134,7 @@ export default async function UbytovaniPage({ params }: Props) {
           <h1 className="text-3xl font-extrabold text-white md:text-5xl">
             {isCs ? "Jak najít ubytování v Norsku" : "Ako nájsť ubytovanie v Nórsku"}
           </h1>
-          <p className="mt-4 max-w-2xl text-lg text-white/70">
+          <p className="mt-3 max-w-xl text-white/65">
             {isCs
               ? "Bez ubytování od zaměstnavatele? Žádný problém. Tady je přesný postup jak si najít bydlení před příjezdem."
               : "Bez ubytovania od zamestnávateľa? Žiadny problém. Tu je presný postup ako si nájsť bývanie pred príchodom."}

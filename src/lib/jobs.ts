@@ -68,6 +68,7 @@ export async function getRecentJobs(limit = 6): Promise<Job[]> {
     .from("jobs")
     .select("*")
     .eq("is_active", true)
+    .eq("source", "nav")
     .eq("requires_norwegian", false)
     .order("published_at", { ascending: false })
     .limit(limit);
@@ -86,6 +87,7 @@ export async function getFeaturedJobs(limit = 3): Promise<Job[]> {
     .select("*")
     .eq("is_active", true)
     .eq("is_featured", true)
+    .eq("source", "nav")
     .eq("requires_norwegian", false)
     .order("published_at", { ascending: false })
     .limit(limit);

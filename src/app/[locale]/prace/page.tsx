@@ -1,5 +1,6 @@
 import { Link } from "@/i18n/navigation";
 import { getJobs, getPremiumJobs, getUserFavoriteIds, localizeJob, getCategoryMeta, CATEGORY_MAP, getDistinctCities } from "@/lib/jobs";
+import { buildAlternates } from "@/lib/seo";
 import { JobFilters } from "@/components/jobs/JobFilters";
 import { JobCard } from "@/components/jobs/JobCard";
 import { FavoriteButton } from "@/components/jobs/FavoriteButton";
@@ -120,6 +121,7 @@ export async function generateMetadata({ params }: Props) {
     description: isCs
       ? `Procházej ${total} aktuálních sezónních pracovních nabídek v Norsku přeložených do češtiny. Filtruj podle kategorie, lokality nebo typu úvazku.`
       : `Prechádzaj ${total} aktuálnych sezónnych pracovných ponúk v Nórsku preložených do slovenčiny. Filtruj podľa kategórie, lokality alebo typu úväzku.`,
+    alternates: buildAlternates(locale, "/prace"),
   };
 }
 
@@ -187,7 +189,7 @@ export default async function PracePage({ params, searchParams }: Props) {
           <h1 className="text-3xl font-extrabold text-white md:text-5xl">
             {isCs ? "Nabídky práce v Norsku" : "Ponuky práce v Nórsku"}
           </h1>
-          <p className="mt-3 text-white/65">
+          <p className="mt-3 max-w-xl text-white/65">
             {total > 0
               ? isCs
                 ? `${total} sezónních pozic — aktualizováno denně`

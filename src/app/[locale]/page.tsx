@@ -1,6 +1,7 @@
 import { Link } from "@/i18n/navigation";
 import { getFeaturedJobs, localizeJob, getCategoryMeta } from "@/lib/jobs";
 import { JobCard } from "@/components/jobs/JobCard";
+import { buildAlternates } from "@/lib/seo";
 import type { Locale } from "@/types";
 
 export const revalidate = 3600; // ISR — rebuild at most once per hour
@@ -28,6 +29,7 @@ export async function generateMetadata({ params }: Props) {
         : "Sezónne pracovné ponuky z Nórska preložené do slovenčiny. Aktualizované denne.",
       type: "website",
     },
+    alternates: buildAlternates(locale, ""),
   };
 }
 
@@ -83,7 +85,7 @@ function HeroSection() {
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage:
-            "url('https://images.unsplash.com/photo-1744619438365-19c55e108cb7?w=1920&q=80')",
+            "url('/images/hero.jpg')",
         }}
       />
 
@@ -119,7 +121,7 @@ function HeroSection() {
         </h1>
 
         <p className="mb-10 max-w-xl text-lg leading-relaxed text-white/70">
-          Tisíce sezónních nabídek přeložených do češtiny a slovenštiny —
+          Stovky sezónních nabídek přeložených do češtiny a slovenštiny —
           aktualizováno každý den.
         </p>
 

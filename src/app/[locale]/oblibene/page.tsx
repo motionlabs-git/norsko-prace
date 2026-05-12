@@ -51,7 +51,7 @@ export default async function OblibenenePage({ params }: Props) {
           <h1 className="text-3xl font-extrabold text-white md:text-5xl">
             {isCs ? "Uložené inzeráty" : "Uložené inzeráty"}
           </h1>
-          <p className="mt-3 text-white/65">
+          <p className="mt-3 max-w-xl text-white/65">
             {jobs.length > 0
               ? isCs
                 ? `${jobs.length} uložených ${jobs.length === 1 ? "inzerát" : jobs.length < 5 ? "inzeráty" : "inzerátů"}`

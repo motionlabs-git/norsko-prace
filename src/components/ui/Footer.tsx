@@ -35,26 +35,27 @@ export function Footer() {
             </h3>
             <ul className="space-y-2.5">
               <li>
-                <Link
-                  href="/prace"
-                  className="text-sm text-white/60 hover:text-white transition-colors"
-                >
+                <Link href="/prace" className="text-sm text-white/60 hover:text-white transition-colors">
                   {nav("jobs")}
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/pruvodce"
-                  className="text-sm text-white/60 hover:text-white transition-colors"
-                >
+                <Link href="/vybrane" className="text-sm text-white/60 hover:text-white transition-colors">
+                  {nav("selected")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/ubytovani" className="text-sm text-white/60 hover:text-white transition-colors">
+                  {nav("accommodation")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/pruvodce" className="text-sm text-white/60 hover:text-white transition-colors">
                   {nav("guides")}
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/blog"
-                  className="text-sm text-white/60 hover:text-white transition-colors"
-                >
+                <Link href="/blog" className="text-sm text-white/60 hover:text-white transition-colors">
                   {nav("blog")}
                 </Link>
               </li>
@@ -67,7 +68,7 @@ export function Footer() {
               Hledáš práci?
             </h3>
             <p className="text-sm text-white/50 mb-4 leading-relaxed">
-              Tisíce sezónních nabídek v češtině — aktualizováno každý den.
+              Stovky sezónních nabídek v češtině — aktualizováno každý den.
             </p>
             <Link
               href="/prace"
@@ -78,13 +79,27 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-2">
+        <div className="mt-10 pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/25">
             © {new Date().getFullYear()} NorskoPráce. {t("rights")}.
           </p>
-          <div className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#C8102E]" />
-            <span className="text-xs text-white/25">Norsko-práce.cz</span>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/privacy"
+              className="text-xs text-white/35 hover:text-white/60 transition-colors"
+            >
+              GDPR
+            </Link>
+            <Link
+              href="/terms"
+              className="text-xs text-white/35 hover:text-white/60 transition-colors"
+            >
+              Podmínky použití
+            </Link>
+            <div className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#C8102E]" />
+              <span className="text-xs text-white/25">Norsko-práce.cz</span>
+            </div>
           </div>
         </div>
       </div>

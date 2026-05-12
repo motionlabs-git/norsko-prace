@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { getJobBySlug, localizeJob, getCategoryMeta, translateSector, getSimilarJobs, getUserFavoriteIds } from "@/lib/jobs";
+import { buildBreadcrumb } from "@/lib/seo";
 import { getApplicationType } from "@/lib/application-utils";
 import { SimilarJobsSlider } from "@/components/jobs/SimilarJobsSlider";
 import { FavoriteButton } from "@/components/jobs/FavoriteButton";
@@ -46,6 +47,7 @@ export async function generateMetadata({ params }: Props) {
       languages: {
         cs: `https://norsko-prace.cz/cs/prace/${slug}`,
         sk: `https://norsko-prace.cz/sk/prace/${slug}`,
+        "x-default": `https://norsko-prace.cz/cs/prace/${slug}`,
       },
     },
   };
@@ -118,7 +120,7 @@ export default async function JobDetailPage({ params }: Props) {
             description: localized.description?.replace(/<[^>]+>/g, "").slice(0, 500),
             hiringOrganization: {
               "@type": "Organization",
-              name: "Norská firma",
+              name: job.company ?? "Norská firma",
             },
             jobLocation: {
               "@type": "Place",
@@ -134,6 +136,15 @@ export default async function JobDetailPage({ params }: Props) {
             validThrough: job.expires_at ?? "",
             url: localized.applicationUrl ?? localized.sourceUrl ?? "",
           }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(buildBreadcrumb([
+            { name: isCs ? "Nabídky práce" : "Ponuky práce", url: `https://norsko-prace.cz/${locale}/prace` },
+            { name: localized.title, url: `https://norsko-prace.cz/${locale}/prace/${slug}` },
+          ])),
         }}
       />
 

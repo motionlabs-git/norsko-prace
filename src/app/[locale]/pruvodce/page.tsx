@@ -1,5 +1,6 @@
 import { Link } from "@/i18n/navigation";
 import { getBlogPosts } from "@/lib/blog";
+import { buildAlternates } from "@/lib/seo";
 
 export const revalidate = 3600;
 
@@ -15,6 +16,7 @@ export async function generateMetadata({ params }: Props) {
     description: isCs
       ? "Vše co potřebuješ před odjezdem — D-number, BankID, daně, ubytování a život v Norsku."
       : "Všetko čo potrebuješ pred odchodom — D-number, BankID, dane, ubytovanie a život v Nórsku.",
+    alternates: buildAlternates(locale, "/pruvodce"),
   };
 }
 
@@ -79,23 +81,20 @@ export default async function PruvoducePage({ params }: Props) {
     <>
       {/* Hero */}
       <section
-        className="relative overflow-hidden py-20"
+        className="py-16"
         style={{ background: "linear-gradient(135deg, #001849 0%, #003087 100%)" }}
       >
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-white opacity-[0.03]" />
-          <div className="absolute -left-16 bottom-0 h-64 w-64 rounded-full bg-[var(--color-accent)] opacity-10" />
-        </div>
-        <div className="relative mx-auto max-w-6xl px-4 md:px-8">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-1.5">
-            <span className="text-xs font-semibold text-white/70">
+        <div className="mx-auto max-w-6xl px-4 md:px-8">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 backdrop-blur-sm border border-white/20">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#C8102E]" />
+            <span className="text-xs font-bold uppercase tracking-widest text-white/80">
               {isCs ? "Zdarma · Praktické · Aktuální" : "Zadarmo · Praktické · Aktuálne"}
             </span>
           </div>
-          <h1 className="mb-4 text-4xl font-extrabold leading-tight text-white md:text-5xl">
-            {isCs ? "Průvodce pro práci\nv Norsku" : "Sprievodcovia pre prácu\nv Nórsku"}
+          <h1 className="text-3xl font-extrabold text-white md:text-5xl">
+            {isCs ? "Průvodce pro práci v Norsku" : "Sprievodcovia pre prácu v Nórsku"}
           </h1>
-          <p className="max-w-xl text-lg text-white/70">
+          <p className="mt-3 max-w-xl text-white/65">
             {isCs
               ? "Vše co potřebuješ vědět před odjezdem — od D-numberu po každodenní život na severu."
               : "Všetko čo potrebuješ vedieť pred odchodom — od D-numbera po každodenný život na severe."}

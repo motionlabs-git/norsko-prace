@@ -8,27 +8,37 @@ import { Footer } from "@/components/ui/Footer";
 import { createClient } from "@/utils/supabase/server";
 import "../globals.css";
 
-export const metadata: Metadata = {
-  metadataBase: new URL("https://norsko-prace.cz"),
-  title: {
-    default: "Práce v Norsku česky | Sezónní nabídky — Norsko-práce.cz",
-    template: "%s | Norsko-práce.cz",
-  },
-  description:
-    "Stovky sezónních pracovních nabídek z Norska přeložených do češtiny. Zemědělství, gastronomie, stavebnictví — aktualizováno denně.",
-  openGraph: {
-    type: "website",
-    locale: "cs_CZ",
-    siteName: "Norsko-práce.cz",
-  },
-  twitter: { card: "summary_large_image" },
-  alternates: {
-    languages: {
-      cs: "https://norsko-prace.cz/cs",
-      sk: "https://norsko-prace.cz/sk",
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const isCs = locale === "cs";
+  return {
+    metadataBase: new URL("https://norsko-prace.cz"),
+    title: {
+      default: isCs
+        ? "Práce v Norsku česky | Sezónní nabídky — Norsko-práce.cz"
+        : "Práca v Nórsku po slovensky | Sezónne ponuky — Norsko-práce.cz",
+      template: "%s | Norsko-práce.cz",
     },
-  },
-};
+    description: isCs
+      ? "Stovky sezónních pracovních nabídek z Norska přeložených do češtiny. Zemědělství, gastronomie, stavebnictví — aktualizováno denně."
+      : "Stovky sezónnych pracovných ponúk z Nórska preložených do slovenčiny. Poľnohospodárstvo, gastronómia, stavebníctvo — aktualizované denne.",
+    openGraph: {
+      type: "website",
+      locale: isCs ? "cs_CZ" : "sk_SK",
+      siteName: "Norsko-práce.cz",
+      images: [{ url: "/images/hero.jpg", width: 1920, height: 1440, alt: "Práce v Norsku" }],
+    },
+    twitter: { card: "summary_large_image" },
+    alternates: {
+      canonical: `https://norsko-prace.cz/${locale}`,
+      languages: {
+        cs: "https://norsko-prace.cz/cs",
+        sk: "https://norsko-prace.cz/sk",
+        "x-default": "https://norsko-prace.cz/cs",
+      },
+    },
+  };
+}
 
 interface LocaleLayoutProps {
   children: React.ReactNode;

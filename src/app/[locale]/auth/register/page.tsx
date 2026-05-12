@@ -1,15 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { createClient } from "@/utils/supabase/client";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const params = useParams();
+  const locale = (params.locale as string) ?? "cs";
+  const isCs = locale === "cs";
+
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -112,12 +117,51 @@ export default function RegisterPage() {
             />
           </div>
 
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              required
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="mt-0.5 h-4 w-4 flex-shrink-0 rounded border-[var(--color-border)] accent-[var(--color-primary)]"
+            />
+            <span className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+              {isCs ? (
+                <>
+                  Souhlasím s{" "}
+                  <Link href="/terms" className="font-semibold text-[var(--color-primary)] hover:underline">
+                    podmínkami použití
+                  </Link>{" "}
+                  a{" "}
+                  <Link href="/privacy" className="font-semibold text-[var(--color-primary)] hover:underline">
+                    zásadami ochrany osobních údajů
+                  </Link>
+                  .
+                </>
+              ) : (
+                <>
+                  Súhlasím s{" "}
+                  <Link href="/terms" className="font-semibold text-[var(--color-primary)] hover:underline">
+                    podmienkami používania
+                  </Link>{" "}
+                  a{" "}
+                  <Link href="/privacy" className="font-semibold text-[var(--color-primary)] hover:underline">
+                    zásadami ochrany osobných údajov
+                  </Link>
+                  .
+                </>
+              )}
+            </span>
+          </label>
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !agreed}
             className="w-full rounded-full bg-[var(--color-primary)] py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-60"
           >
-            {loading ? "Registruji…" : "Vytvořit účet"}
+            {loading
+              ? isCs ? "Registruji…" : "Registrujem…"
+              : isCs ? "Vytvořit účet" : "Vytvoriť účet"}
           </button>
         </form>
       </div>

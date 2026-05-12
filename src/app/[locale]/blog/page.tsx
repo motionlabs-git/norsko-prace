@@ -1,5 +1,6 @@
 import { Link } from "@/i18n/navigation";
 import { getBlogPosts } from "@/lib/blog";
+import { buildAlternates } from "@/lib/seo";
 
 export const revalidate = 3600;
 
@@ -16,6 +17,7 @@ export async function generateMetadata({ params }: Props) {
     description: isCs
       ? "Tipy, zkušenosti a novinky o práci v Norsku — co čekat, jak se připravit a jak to tam skutečně chodí."
       : "Tipy, skúsenosti a novinky o práci v Nórsku — čo čakať, ako sa pripraviť a ako to tam skutočne chodí.",
+    alternates: buildAlternates(locale, "/blog"),
   };
 }
 

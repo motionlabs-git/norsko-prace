@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { getBlogPost, getBlogPosts } from "@/lib/blog";
+import { buildAlternates, buildBreadcrumb } from "@/lib/seo";
 import { MDXRemote } from "next-mdx-remote/rsc";
 
 export const revalidate = 3600;
@@ -23,6 +24,13 @@ export async function generateMetadata({ params }: Props) {
   return {
     title: post.title,
     description: post.description,
+    openGraph: {
+      title: post.title,
+      description: post.description,
+      type: "article",
+      publishedTime: post.publishedAt,
+    },
+    alternates: buildAlternates(locale, `/blog/${slug}`),
   };
 }
 
@@ -43,8 +51,39 @@ export default async function BlogPostPage({ params }: Props) {
     });
   };
 
+  const BASE = "https://norsko-prace.cz";
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: post.title,
+            description: post.description,
+            datePublished: post.publishedAt,
+            inLanguage: locale === "cs" ? "cs" : "sk",
+            url: `${BASE}/${locale}/blog/${slug}`,
+            publisher: {
+              "@type": "Organization",
+              name: "Norsko-práce.cz",
+              url: BASE,
+              logo: { "@type": "ImageObject", url: `${BASE}/images/norsko-prace-logo.svg` },
+            },
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(buildBreadcrumb([
+            { name: isCs ? "Průvodce" : "Sprievodcovia", url: `${BASE}/${locale}/blog` },
+            { name: post.title, url: `${BASE}/${locale}/blog/${slug}` },
+          ])),
+        }}
+      />
       {/* Header */}
       <section
         className="py-12"
