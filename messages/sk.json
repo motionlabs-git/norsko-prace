@@ -74,5 +74,11 @@
     "loading": "Načítavam...",
     "error": "Nastala chyba",
     "backToList": "Späť na prehľad"
+  },
+  "notFound": {
+    "title": "Stránka nenájdená",
+    "description": "Ľutujeme, ale stránka, ktorú hľadáš, neexistuje alebo bola presunutá.",
+    "goHome": "Späť na úvod",
+    "browseJobs": "Prehľadávať ponuky"
   }
 }
