@@ -11,35 +11,22 @@ type JobItem = {
 
 interface Props {
   items: JobItem[];
-  locale: string;
   label: string;
 }
 
 function ChevronLeft() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-      <path d="M15 18l-6-6 6-6" />
-    </svg>
-  );
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M15 18l-6-6 6-6" /></svg>;
 }
 
 function ChevronRight() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-      <path d="M9 18l6-6-6-6" />
-    </svg>
-  );
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M9 18l6-6-6-6" /></svg>;
 }
 
-export function SimilarJobsSlider({ items, locale, label }: Props) {
+export function SimilarJobsSlider({ items, label }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
-
   const scroll = (dir: "left" | "right") => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.scrollBy({ left: dir === "right" ? 300 : -300, behavior: "smooth" });
+    scrollRef.current?.scrollBy({ left: dir === "right" ? 300 : -300, behavior: "smooth" });
   };
-
   if (items.length === 0) return null;
 
   return (
@@ -48,31 +35,14 @@ export function SimilarJobsSlider({ items, locale, label }: Props) {
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-bold text-[var(--color-text)]">{label}</h2>
           <div className="flex gap-2">
-            <button
-              onClick={() => scroll("left")}
-              aria-label="Předchozí"
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-white text-[var(--color-text-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-            >
-              <ChevronLeft />
-            </button>
-            <button
-              onClick={() => scroll("right")}
-              aria-label="Další"
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-white text-[var(--color-text-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-            >
-              <ChevronRight />
-            </button>
+            <button onClick={() => scroll("left")} aria-label="Předchozí" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-white text-[var(--color-text-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"><ChevronLeft /></button>
+            <button onClick={() => scroll("right")} aria-label="Další" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-white text-[var(--color-text-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"><ChevronRight /></button>
           </div>
         </div>
-
-        <div
-          ref={scrollRef}
-          className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth"
-          style={{ scrollbarWidth: "none" }}
-        >
+        <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth" style={{ scrollbarWidth: "none" }}>
           {items.map(({ job, meta }) => (
             <div key={job.id} className="w-72 flex-shrink-0 snap-start">
-              <JobCard job={job} meta={meta} locale={locale} headingLevel="h3" />
+              <JobCard job={job} meta={meta} headingLevel="h3" />
             </div>
           ))}
         </div>

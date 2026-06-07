@@ -90,12 +90,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: message, cause: String(cause ?? "") }, { status: 500 });
   }
 
+  // Deactivate jobs whose expires_at has passed (NAV doesn't always send INACTIVE for these)
+  const { data: expiredData } = await db
+    .from("jobs")
+    .update({ is_active: false })
+    .eq("is_active", true)
+    .not("expires_at", "is", null)
+    .lt("expires_at", syncStarted)
+    .select("id");
+
+  const totalExpired = expiredData?.length ?? 0;
+
   await db.from("sync_log").insert({
     synced_at: syncStarted,
     pages,
     processed: totalProcessed,
     upserted: totalUpserted,
-    deactivated: totalInactive,
+    deactivated: totalInactive + totalExpired,
     filtered_norwegian: totalFilteredNorwegian,
     filtered_no_contact: totalFilteredNoContact,
   });
@@ -106,7 +117,8 @@ export async function GET(request: NextRequest) {
     pages,
     processed: totalProcessed,
     upserted: totalUpserted,
-    deactivated: totalInactive,
+    deactivatedByNAV: totalInactive,
+    deactivatedExpired: totalExpired,
     filteredNorwegian: totalFilteredNorwegian,
     filteredNoContact: totalFilteredNoContact,
     syncedAt: syncStarted,

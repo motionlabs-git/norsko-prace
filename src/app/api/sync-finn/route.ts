@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { iterateFinnFeed } from "@/lib/finn-api";
 import { translateBatch } from "@/lib/translate";
 import { upsertJobs, finnJobToRow } from "@/lib/jobs";
+import { hasBlockedTitle } from "@/lib/job-filter";
 
 export const maxDuration = 300;
 
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
 
       const rows = finnJobs
         .map((j, i) => finnJobToRow(j, translations[i]))
-        .filter((r) => !r.requires_norwegian);
+        .filter((r) => !r.requires_norwegian && !hasBlockedTitle(r.title_no ?? ""));
 
       upserted += await upsertJobs(rows);
     });

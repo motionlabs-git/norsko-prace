@@ -1,15 +1,9 @@
 const BASE = "https://norsko-prace.cz";
 
-export function buildAlternates(locale: string, path: string) {
-  const csUrl = `${BASE}/cs${path}`;
-  const skUrl = `${BASE}/sk${path}`;
+export function buildAlternates(path: string) {
+  const url = `${BASE}${path}`;
   return {
-    canonical: locale === "cs" ? csUrl : skUrl,
-    languages: {
-      cs: csUrl,
-      sk: skUrl,
-      "x-default": csUrl,
-    },
+    canonical: url,
   };
 }
 

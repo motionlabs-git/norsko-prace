@@ -1,5 +1,3 @@
-export type Locale = "cs" | "sk";
-
 // NAV API types
 export interface NavFeedItem {
   id: string;

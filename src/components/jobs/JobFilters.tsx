@@ -4,27 +4,24 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 
 const CATEGORIES = [
-  { value: "", label: { cs: "Všechny kategorie", sk: "Všetky kategórie" } },
-  { value: "Jordbruk, skogbruk og fiske", label: { cs: "Zemědělství", sk: "Poľnohospodárstvo" } },
-  { value: "Reiseliv og mat", label: { cs: "Gastronomie", sk: "Gastronómia" } },
-  { value: "Bygg og anlegg", label: { cs: "Stavebnictví", sk: "Stavebníctvo" } },
-  { value: "Transport og logistikk", label: { cs: "Doprava", sk: "Doprava" } },
-  { value: "Renhold og eiendomsdrift", label: { cs: "Úklid", sk: "Upratovanie" } },
+  { value: "", label: "Všechny kategorie" },
+  { value: "Jordbruk, skogbruk og fiske", label: "Zemědělství" },
+  { value: "Reiseliv og mat", label: "Gastronomie" },
+  { value: "Bygg og anlegg", label: "Stavebnictví" },
+  { value: "Transport og logistikk", label: "Doprava" },
+  { value: "Renhold og eiendomsdrift", label: "Úklid" },
 ];
 
 const ENGAGEMENT_TYPES = [
-  { value: "", label: { cs: "Všechny typy", sk: "Všetky typy" } },
-  { value: "Sesong", label: { cs: "Sezónní", sk: "Sezónna" } },
-  { value: "Feriejobb", label: { cs: "Brigáda", sk: "Brigáda" } },
-  { value: "Vikariat", label: { cs: "Zástup", sk: "Zástup" } },
-  { value: "Midlertidig", label: { cs: "Dočasný", sk: "Dočasná" } },
-  { value: "Fast", label: { cs: "Trvalý", sk: "Trvalá" } },
+  { value: "", label: "Všechny typy" },
+  { value: "Sesong", label: "Sezónní" },
+  { value: "Feriejobb", label: "Brigáda" },
+  { value: "Vikariat", label: "Zástup" },
+  { value: "Midlertidig", label: "Dočasný" },
+  { value: "Fast", label: "Trvalý" },
 ];
 
-type Locale = "cs" | "sk";
-
 interface JobFiltersProps {
-  locale: Locale;
   category?: string;
   engagementType?: string;
   city?: string;
@@ -33,7 +30,6 @@ interface JobFiltersProps {
 }
 
 export function JobFilters({
-  locale,
   category = "",
   engagementType = "",
   city = "",
@@ -81,9 +77,7 @@ export function JobFilters({
         aria-label="Kategorie"
       >
         {CATEGORIES.map((c) => (
-          <option key={c.value} value={c.value}>
-            {c.label[locale]}
-          </option>
+          <option key={c.value} value={c.value}>{c.label}</option>
         ))}
       </select>
 
@@ -94,9 +88,7 @@ export function JobFilters({
         aria-label="Typ úvazku"
       >
         {ENGAGEMENT_TYPES.map((t) => (
-          <option key={t.value} value={t.value}>
-            {t.label[locale]}
-          </option>
+          <option key={t.value} value={t.value}>{t.label}</option>
         ))}
       </select>
 
@@ -107,13 +99,9 @@ export function JobFilters({
           onChange={(e) => navigate("city", e.target.value)}
           aria-label="Město"
         >
-          <option value="">
-            {locale === "cs" ? "Všechna města" : "Všetky mestá"}
-          </option>
+          <option value="">Všechna města</option>
           {cities.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
+            <option key={c} value={c}>{c}</option>
           ))}
         </select>
       )}
@@ -130,9 +118,8 @@ export function JobFilters({
           <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
           <polyline points="9 22 9 12 15 12 15 22" />
         </svg>
-        {locale === "cs" ? "S ubytováním" : "S ubytovaním"}
+        S ubytováním
       </button>
-
     </div>
   );
 }

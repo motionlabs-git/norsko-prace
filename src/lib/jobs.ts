@@ -1,5 +1,5 @@
 import { createServerSupabase, supabaseAdmin } from "./supabase";
-import type { Job, LocalizedJob, Locale, NavVacancy } from "@/types";
+import type { Job, LocalizedJob, NavVacancy } from "@/types";
 import type { FinnJob } from "./finn-api";
 
 // ── Category mapping (NAV Norwegian → display) ─────────────────────────────
@@ -208,52 +208,44 @@ export async function getAllJobSlugs(): Promise<{ slug: string; updatedAt: strin
 
 // ── Norwegian enum translations ──────────────────────────────────────────────
 
-const ENGAGEMENT_TYPE: Record<string, Record<Locale, string>> = {
-  Sesong:      { cs: "Sezónní",   sk: "Sezónna" },
-  Vikariat:    { cs: "Zástup",    sk: "Zástup" },
-  Midlertidig: { cs: "Dočasný",   sk: "Dočasná" },
-  Fast:        { cs: "Trvalý",    sk: "Trvalá" },
-  Feriejobb:   { cs: "Brigáda",   sk: "Brigáda" },
-  Prosjekt:    { cs: "Projekt",   sk: "Projekt" },
+const ENGAGEMENT_TYPE: Record<string, string> = {
+  Sesong:      "Sezónní",
+  Vikariat:    "Zástup",
+  Midlertidig: "Dočasný",
+  Fast:        "Trvalý",
+  Feriejobb:   "Brigáda",
+  Prosjekt:    "Projekt",
 };
 
-const EXTENT: Record<string, Record<Locale, string>> = {
-  Heltid: { cs: "Plný úvazek",      sk: "Plný úväzok" },
-  Deltid: { cs: "Částečný úvazek",  sk: "Čiastočný úväzok" },
+const EXTENT: Record<string, string> = {
+  Heltid: "Plný úvazek",
+  Deltid: "Částečný úvazek",
 };
 
-const SECTOR: Record<string, Record<Locale, string>> = {
-  Offentlig:       { cs: "Veřejný sektor",    sk: "Verejný sektor" },
-  Privat:          { cs: "Soukromý sektor",   sk: "Súkromný sektor" },
-  "Ikke oppgitt":  { cs: "Neuvedeno",         sk: "Neuvedené" },
+const SECTOR: Record<string, string> = {
+  Offentlig:      "Veřejný sektor",
+  Privat:         "Soukromý sektor",
+  "Ikke oppgitt": "Neuvedeno",
 };
 
-function translateEnum(
-  map: Record<string, Record<Locale, string>>,
-  value: string | null,
-  locale: Locale
-): string | null {
+function translateEnum(map: Record<string, string>, value: string | null): string | null {
   if (!value) return null;
-  return map[value]?.[locale] ?? value;
+  return map[value] ?? value;
 }
 
 // ── Localization helper ──────────────────────────────────────────────────────
 
-export function localizeJob(job: Job, locale: Locale): LocalizedJob {
-  const suffix = `_${locale}` as const;
+export function localizeJob(job: Job): LocalizedJob {
   return {
     id: job.id,
     slug: job.slug,
-    title: (job[`title${suffix}` as keyof Job] as string) ?? job.title_no ?? "",
-    description:
-      (job[`description${suffix}` as keyof Job] as string) ??
-      job.description_no ??
-      "",
+    title: job.title_cs ?? job.title_no ?? "",
+    description: job.description_cs ?? job.description_no ?? "",
     company: job.company,
     location: job.location_city || null,
     category: job.category_level1,
-    engagementType: translateEnum(ENGAGEMENT_TYPE, job.engagement_type, locale),
-    extent: translateEnum(EXTENT, job.extent, locale),
+    engagementType: translateEnum(ENGAGEMENT_TYPE, job.engagement_type),
+    extent: translateEnum(EXTENT, job.extent),
     applicationDue: job.application_due,
     publishedAt: job.published_at,
     expiresAt: job.expires_at,
@@ -266,8 +258,8 @@ export function localizeJob(job: Job, locale: Locale): LocalizedJob {
   };
 }
 
-export function translateSector(value: string | null, locale: Locale): string | null {
-  return translateEnum(SECTOR, value, locale);
+export function translateSector(value: string | null): string | null {
+  return translateEnum(SECTOR, value);
 }
 
 export async function getPremiumJobs(): Promise<Job[]> {

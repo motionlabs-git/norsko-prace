@@ -1,54 +1,34 @@
 import Link from "next/link";
-import { getMessages } from "next-intl/server";
-import { NextIntlClientProvider } from "next-intl";
-import { Navbar } from "@/components/ui/Navbar";
-import { Footer } from "@/components/ui/Footer";
-import "./globals.css";
 
-export default async function RootNotFound() {
-  const messages = await getMessages();
-
+export default function NotFound() {
   return (
-    <html lang="cs" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">
-        <NextIntlClientProvider messages={messages} locale="cs">
-          <Navbar locale="cs" user={null} />
+    <div className="min-h-screen bg-[var(--color-bg)]">
+      <section className="py-16" style={{ background: "linear-gradient(135deg, #001849 0%, #003087 100%)" }}>
+        <div className="mx-auto max-w-6xl px-4 md:px-8">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 backdrop-blur-sm border border-white/20">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#C8102E]" />
+            <span className="text-xs font-bold uppercase tracking-widest text-white/80">Chyba stránky</span>
+          </div>
+          <h1 className="mb-6 text-7xl md:text-8xl font-extrabold text-[#C8102E]">404</h1>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4 max-w-2xl">Stránka nenalezena</h2>
+          <p className="mt-3 max-w-xl text-white/70 text-lg leading-relaxed">
+            Omlouváme se, ale stránka, kterou hledáš, neexistuje nebo byla přesunuta. Pojď se vrátit na úvod nebo procházet pracovní nabídky v Norsku.
+          </p>
+        </div>
+      </section>
 
-          <main className="flex-1">
-            <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center">
-              <div className="w-full max-w-2xl px-6 py-20 text-center">
-                <div className="mb-8">
-                  <div className="text-8xl font-extrabold text-[#C8102E] mb-6">404</div>
-                  <h1 className="text-4xl md:text-5xl font-extrabold text-[var(--color-text)] mb-4">
-                    Stránka nenalezena
-                  </h1>
-                  <p className="text-lg text-[var(--color-text-muted)] max-w-lg mx-auto mb-10">
-                    Omlouváme se, ale stránka, kterou hledáš, neexistuje nebo byla přesunuta.
-                    Pojď se vrátit na úvod nebo procházet pracovní nabídky.
-                  </p>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link
-                    href="/cs"
-                    className="inline-flex items-center gap-2 rounded-full bg-[#C8102E] px-8 py-4 text-base font-bold text-white shadow-lg transition hover:bg-[#9e0b21] hover:shadow-xl"
-                  >
-                    Zpět na úvod
-                  </Link>
-                  <Link
-                    href="/cs/prace"
-                    className="inline-flex items-center gap-2 rounded-full border-2 border-[#046353] bg-white px-8 py-4 text-base font-semibold text-[#046353] shadow-md transition hover:bg-[#f0f9f7]"
-                  >
-                    Procházet nabídky
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </main>
-
-          <Footer />
-        </NextIntlClientProvider>
-      </body>
-    </html>
+      <section className="py-16">
+        <div className="mx-auto max-w-6xl px-4 md:px-8 text-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/" className="inline-flex items-center gap-2 rounded-full bg-[#C8102E] px-8 py-4 text-base font-bold text-white shadow-lg transition hover:bg-[#9e0b21] hover:shadow-xl">
+              Zpět na úvod
+            </Link>
+            <Link href="/prace" className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-8 py-4 text-base font-medium text-[var(--color-text)] transition hover:bg-[var(--color-bg)]">
+              Procházet nabídky
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }

@@ -7,32 +7,18 @@
  */
 
 import type { NavFeedPage, NavFeedItem, NavVacancy } from "@/types";
+import {
+  ALLOWED_OCCUPATION_CATEGORIES,
+  BLOCKED_OCCUPATION_CATEGORIES,
+  SEASONAL_ENGAGEMENT_TYPES,
+  hasBlockedTitle,
+} from "./job-filter";
 
 const FEED_BASE_URL = "https://pam-stilling-feed.nav.no";
 
-// Kategorie relevantní pro sezónní pracovníky z CZ/SK
-const SEASONAL_OCCUPATION_CATEGORIES = new Set([
-  "Jordbruk, skogbruk og fiske",
-  "Reiseliv og mat",
-  "Bygg og anlegg",
-  "Transport og logistikk",
-  "Renhold og eiendomsdrift",
-]);
-
-// Čistě sezónní typy — stačí samotné (bez ohledu na kategorii)
-const STRICTLY_SEASONAL_TYPES = new Set([
-  "Sesong", "Feriejobb", "sesong", "feriejobb",
-]);
-
-// Dočasné typy — akceptovatelné jen v kombinaci se sezónní kategorií
-const TEMP_ENGAGEMENT_TYPES = new Set([
-  "Sesong", "Vikariat", "Midlertidig", "Feriejobb",
-  "sesong", "vikariat", "midlertidig", "feriejobb",
-]);
-
 let cachedToken: string | null = null;
 let tokenFetchedAt: number = 0;
-const TOKEN_TTL_MS = 55 * 60 * 1000; // 55 minut (tokeny platí ~1h)
+const TOKEN_TTL_MS = 55 * 60 * 1000;
 
 async function getPublicToken(): Promise<string> {
   const now = Date.now();
@@ -50,17 +36,11 @@ async function getPublicToken(): Promise<string> {
   }
 
   const raw = await res.text();
-  // Response may contain a human-readable prefix line — extract just the JWT
   cachedToken = raw.trim().split(/\s+/).at(-1) ?? raw.trim();
   tokenFetchedAt = now;
   return cachedToken;
 }
 
-/**
- * Stáhne jednu stránku feedu.
- * @param sinceDate ISO-8601 nebo RFC-1123 datum pro If-Modified-Since header
- * @param nextUrl   URL pro paginaci (null = začátek feedu)
- */
 export async function fetchFeedPage(
   sinceDate: string | null,
   nextUrl: string | null
@@ -75,22 +55,13 @@ export async function fetchFeedPage(
   };
 
   if (sinceDate && !nextUrl) {
-    // If-Modified-Since použijeme jen na první stránce (nextUrl má datum v sobě)
     headers["If-Modified-Since"] = new Date(sinceDate).toUTCString();
   }
 
   const res = await fetch(url, { headers, cache: "no-store" });
 
   if (res.status === 304) {
-    // Žádné nové inzeráty od posledního syncu
-    return {
-      version: "",
-      title: "",
-      feed_url: url,
-      next_url: null,
-      next_id: null,
-      items: [],
-    };
+    return { version: "", title: "", feed_url: url, next_url: null, next_id: null, items: [] };
   }
 
   if (!res.ok) {
@@ -100,22 +71,15 @@ export async function fetchFeedPage(
   return res.json();
 }
 
-/**
- * Stáhne detail jednoho inzerátu z URL v položce feedu.
- */
 export async function fetchVacancyDetail(itemUrl: string): Promise<NavVacancy | null> {
   const token = await getPublicToken();
   const url = itemUrl.startsWith("http") ? itemUrl : `${FEED_BASE_URL}${itemUrl}`;
 
   try {
     const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
       next: { revalidate: 0 },
     });
-
     if (!res.ok) return null;
     return res.json();
   } catch {
@@ -124,17 +88,20 @@ export async function fetchVacancyDetail(itemUrl: string): Promise<NavVacancy | 
 }
 
 /**
- * Rozhodne, zda je inzerát relevantní pro sezónní pracovníky z CZ/SK.
- * Kritéria:
- *   - engagementtype patří mezi sezónní typy, NEBO
- *   - occupationCategories.level1 je v sezónních kategoriích
- *   - Inzerát je v Norsku (workLocations.country === 'NORGE' nebo prázdné)
+ * Rozhodne, zda je inzerát vhodný pro sezónní CZ/SK pracovníky.
+ *
+ * Pravidla (v pořadí):
+ *  1. Musí být v Norsku
+ *  2. Blokované kategorie → vždy vyloučit
+ *  3. Blokovaná klíčová slova v titulu → vždy vyloučit
+ *  4. Musí mít sezónní/dočasný typ úvazku
+ *  5. Musí být v povolené kategorii
  */
 export function isSeasonalJob(vacancy: NavVacancy): boolean {
   const ad = vacancy.ad_content;
-  if (!ad) return false; // INACTIVE — no ad_content
+  if (!ad) return false;
 
-  // Kontrola lokace — chceme jen Norsko
+  // 1. Lokace — pouze Norsko
   const locations = ad.workLocations ?? [];
   const isInNorway =
     locations.length === 0 ||
@@ -143,29 +110,31 @@ export function isSeasonalJob(vacancy: NavVacancy): boolean {
     );
   if (!isInNorway) return false;
 
-  const engagement = ad.engagementtype ?? "";
-  const engLower = engagement.toLowerCase();
+  const categories = ad.occupationCategories ?? [];
 
-  // Čistě sezónní typ (Sesong, Feriejobb) → vždy zahrnout (i v kombinovaných řetězcích)
-  const hasStrictlySeasonal = [...STRICTLY_SEASONAL_TYPES].some((t) => engLower.includes(t.toLowerCase()));
-  if (hasStrictlySeasonal) return true;
-
-  // Sezónní kategorie + dočasný úvazek → zahrnout (vyloučí Fast/trvalé pozice)
-  const categoryMatch = (ad.occupationCategories ?? []).some((cat) =>
-    SEASONAL_OCCUPATION_CATEGORIES.has(cat.level1)
+  // 2. Blokované kategorie (healthcare, retail, office...)
+  const isBlocked = categories.some(
+    (cat) =>
+      BLOCKED_OCCUPATION_CATEGORIES.has(cat.level1) ||
+      BLOCKED_OCCUPATION_CATEGORIES.has(cat.level2 ?? "")
   );
-  const hasTempType = [...TEMP_ENGAGEMENT_TYPES].some((t) => engLower.includes(t.toLowerCase()));
-  return categoryMatch && hasTempType;
+  if (isBlocked) return false;
+
+  // 3. Blokovaná klíčová slova v titulu
+  if (hasBlockedTitle(ad.title ?? "")) return false;
+
+  // 4. Typ úvazku musí být sezónní/dočasný (ne trvalý)
+  const engLower = (ad.engagementtype ?? "").toLowerCase();
+  const hasSeasonal = [...SEASONAL_ENGAGEMENT_TYPES].some((t) => engLower.includes(t.toLowerCase()));
+  if (!hasSeasonal) return false;
+
+  // 5. Musí být v povolené kategorii
+  const inAllowedCategory = categories.some((cat) =>
+    ALLOWED_OCCUPATION_CATEGORIES.has(cat.level1)
+  );
+  return inAllowedCategory;
 }
 
-/**
- * Iteruje celý feed od daného datumu a vrací relevantní aktivní inzeráty.
- * Callback dostává dávky inzerátů pro postupné zpracování (překlad + uložení).
- *
- * @param sinceDate   Datum posledního úspěšného syncu (null = full sync)
- * @param onBatch     Callback volaný pro každou dávku (feedová stránka)
- * @param onInactive  Callback pro INACTIVE položky (soft delete)
- */
 export async function iterateFeed(
   sinceDate: string | null,
   onBatch: (vacancies: NavVacancy[]) => Promise<void>,
@@ -183,7 +152,6 @@ export async function iterateFeed(
 
     pages++;
 
-    // Rozděl položky na aktivní a neaktivní
     const activeItems: NavFeedItem[] = [];
     const inactiveIds: string[] = [];
 
@@ -195,13 +163,11 @@ export async function iterateFeed(
       }
     }
 
-    // Zpracuj neaktivní
     if (inactiveIds.length > 0) {
       await onInactive(inactiveIds);
       inactive += inactiveIds.length;
     }
 
-    // Stáhni detaily aktivních a filtruj sezónní (max 8 concurrent)
     if (activeItems.length > 0) {
       const CONCURRENCY = 8;
       const details: (NavVacancy | null)[] = [];

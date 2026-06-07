@@ -1,16 +1,9 @@
 import Image from "next/image";
-import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import Link from "next/link";
 
 export function Footer() {
-  const t = useTranslations("footer");
-  const nav = useTranslations("nav");
-
   return (
-    <footer
-      style={{ background: "#0d1117" }}
-      className="mt-0 border-t border-white/10"
-    >
+    <footer style={{ background: "#0d1117" }} className="mt-0 border-t border-white/10">
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-14">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {/* Brand */}
@@ -24,39 +17,37 @@ export function Footer() {
               />
             </div>
             <p className="text-sm text-white/45 leading-relaxed">
-              {t("description")}
+              Sezónní práce v Norsku pro česky mluvící uchazeče.
             </p>
           </div>
 
           {/* Links */}
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-4">
-              Navigace
-            </h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-4">Navigace</h3>
             <ul className="space-y-2.5">
               <li>
                 <Link href="/prace" className="text-sm text-white/60 hover:text-white transition-colors">
-                  {nav("jobs")}
+                  Nabídky práce
                 </Link>
               </li>
               <li>
                 <Link href="/vybrane" className="text-sm text-white/60 hover:text-white transition-colors">
-                  {nav("selected")}
+                  Vybrané práce
                 </Link>
               </li>
               <li>
                 <Link href="/ubytovani" className="text-sm text-white/60 hover:text-white transition-colors">
-                  {nav("accommodation")}
+                  Ubytování
                 </Link>
               </li>
               <li>
                 <Link href="/pruvodce" className="text-sm text-white/60 hover:text-white transition-colors">
-                  {nav("guides")}
+                  Průvodce
                 </Link>
               </li>
               <li>
                 <Link href="/blog" className="text-sm text-white/60 hover:text-white transition-colors">
-                  {nav("blog")}
+                  Blog
                 </Link>
               </li>
             </ul>
@@ -64,9 +55,7 @@ export function Footer() {
 
           {/* CTA */}
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-4">
-              Hledáš práci?
-            </h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-4">Hledáš práci?</h3>
             <p className="text-sm text-white/50 mb-4 leading-relaxed">
               Stovky sezónních nabídek v češtině — aktualizováno každý den.
             </p>
@@ -81,19 +70,13 @@ export function Footer() {
 
         <div className="mt-10 pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/25">
-            © {new Date().getFullYear()} NorskoPráce. {t("rights")}.
+            © {new Date().getFullYear()} NorskoPráce. Všechna práva vyhrazena.
           </p>
           <div className="flex items-center gap-4">
-            <Link
-              href="/privacy"
-              className="text-xs text-white/35 hover:text-white/60 transition-colors"
-            >
+            <Link href="/privacy" className="text-xs text-white/35 hover:text-white/60 transition-colors">
               GDPR
             </Link>
-            <Link
-              href="/terms"
-              className="text-xs text-white/35 hover:text-white/60 transition-colors"
-            >
+            <Link href="/terms" className="text-xs text-white/35 hover:text-white/60 transition-colors">
               Podmínky použití
             </Link>
             <div className="flex items-center gap-1.5">
