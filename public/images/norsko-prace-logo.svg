@@ -1,28 +1,23 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 286 56" width="286" height="56" role="img" aria-label="norsko-prace.cz">
-  <title>norsko-prace.cz — sezónní práce v Norsku</title>
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 286 56" width="286" height="56" role="img" aria-label="Norsko-práce">
+  <title>Norsko-práce — sezónní práce v Norsku</title>
 
   
   <g>
-    
     <rect x="0" y="0" width="56" height="56" rx="12" ry="12" fill="#C8102E"></rect>
     
-    <rect x="0" y="21" width="56" height="14" fill="#FFFFFF"></rect>
+    <rect x="0" y="22" width="56" height="12" fill="#FFFFFF"></rect>
+    <rect x="14.5" y="0" width="12" height="56" fill="#FFFFFF"></rect>
     
-    <rect x="15.273" y="0" width="10.182" height="56" fill="#FFFFFF"></rect>
-    
-    <rect x="0" y="24.5" width="56" height="7" fill="#003087"></rect>
-    
-    <rect x="17.818" y="0" width="5.091" height="56" fill="#003087"></rect>
+    <rect x="0" y="25" width="56" height="6" fill="#003087"></rect>
+    <rect x="17.5" y="0" width="6" height="56" fill="#003087"></rect>
   </g>
 
   
   <g font-family="&#39;Outfit&#39;, -apple-system, BlinkMacSystemFont, &#39;Segoe UI&#39;, Helvetica, Arial, sans-serif">
-    
     <text x="72" y="28" font-weight="800" font-size="26" letter-spacing="-0.52" fill="#1C1C1E" dominant-baseline="middle">
       <tspan>Norsko</tspan><tspan fill="#C8102E">-</tspan><tspan>práce</tspan>
     </text>
-    
     <text x="72" y="46" font-weight="400" font-size="11" letter-spacing="1.54" fill="#6B7280" dominant-baseline="middle">
       SEZÓNNÍ PRÁCE V NORSKU
     </text>

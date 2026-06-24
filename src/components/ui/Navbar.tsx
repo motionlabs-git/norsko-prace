@@ -27,7 +27,10 @@ export function Navbar({ user }: NavbarProps) {
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setDropdownOpen(false);
       }
     }
@@ -43,7 +46,12 @@ export function Navbar({ user }: NavbarProps) {
   }
 
   const initials = user?.fullName
-    ? user.fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+    ? user.fullName
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
     : (user?.email.slice(0, 2).toUpperCase() ?? "?");
 
   const navLinks = [
@@ -59,23 +67,16 @@ export function Navbar({ user }: NavbarProps) {
       <header className="sticky top-0 z-50 bg-[var(--color-bg)]/90 backdrop-blur-md border-b border-[var(--color-border)]">
         <div className="max-w-6xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" onClick={() => setMenuOpen(false)} className="flex items-center relative z-50">
-            <span className="flex md:hidden overflow-hidden" style={{ width: 36, height: 36 }}>
-              <Image
-                src="/images/norsko-prace-logo.svg"
-                alt="NorskoPráce"
-                width={184}
-                height={36}
-                style={{ maxWidth: "none" }}
-                priority
-              />
-            </span>
+          <Link
+            href="/"
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center relative z-50"
+          >
             <Image
               src="/images/norsko-prace-logo.svg"
               alt="NorskoPráce"
-              width={184}
-              height={36}
-              className="hidden md:block"
+              width={200}
+              height={40}
               priority
             />
           </Link>
@@ -87,7 +88,9 @@ export function Navbar({ user }: NavbarProps) {
                 key={href}
                 href={href}
                 className={`text-sm font-medium transition-colors hover:text-[var(--color-primary)] ${
-                  isActive(href) ? "text-[var(--color-primary)]" : "text-[var(--color-text-muted)]"
+                  isActive(href)
+                    ? "text-[var(--color-primary)]"
+                    : "text-[var(--color-text-muted)]"
                 }`}
               >
                 {label}
@@ -111,7 +114,9 @@ export function Navbar({ user }: NavbarProps) {
                       <p className="text-xs font-semibold text-[var(--color-text)] truncate">
                         {user.fullName ?? user.email}
                       </p>
-                      <p className="text-xs text-[var(--color-text-muted)] truncate">{user.email}</p>
+                      <p className="text-xs text-[var(--color-text-muted)] truncate">
+                        {user.email}
+                      </p>
                     </div>
                     <Link
                       href="/oblibene"
@@ -165,11 +170,19 @@ export function Navbar({ user }: NavbarProps) {
               <span className="relative flex items-center justify-center w-4 h-4">
                 <span
                   className="absolute block h-[2px] w-4 rounded-full bg-current transition-all duration-300"
-                  style={{ transform: menuOpen ? "translateY(0) rotate(45deg)" : "translateY(-4px)" }}
+                  style={{
+                    transform: menuOpen
+                      ? "translateY(0) rotate(45deg)"
+                      : "translateY(-4px)",
+                  }}
                 />
                 <span
                   className="absolute block h-[2px] w-4 rounded-full bg-current transition-all duration-300"
-                  style={{ transform: menuOpen ? "translateY(0) rotate(-45deg)" : "translateY(4px)" }}
+                  style={{
+                    transform: menuOpen
+                      ? "translateY(0) rotate(-45deg)"
+                      : "translateY(4px)",
+                  }}
                 />
               </span>
             </button>
@@ -182,7 +195,8 @@ export function Navbar({ user }: NavbarProps) {
         className="fixed inset-0 z-40 flex flex-col md:hidden"
         style={{
           background: "linear-gradient(135deg, #001849 0%, #003087 100%)",
-          transition: "opacity 0.35s cubic-bezier(0.32,0.72,0,1), transform 0.35s cubic-bezier(0.32,0.72,0,1)",
+          transition:
+            "opacity 0.35s cubic-bezier(0.32,0.72,0,1), transform 0.35s cubic-bezier(0.32,0.72,0,1)",
           opacity: menuOpen ? 1 : 0,
           transform: menuOpen ? "translateY(0)" : "translateY(-100%)",
           pointerEvents: menuOpen ? "auto" : "none",
@@ -197,12 +211,19 @@ export function Navbar({ user }: NavbarProps) {
         <div className="relative flex flex-col flex-1 px-6 pt-10 pb-12 overflow-y-auto">
           <nav className="flex flex-col">
             {[
-              ...navLinks.map((l, i) => ({ ...l, delay: `${0.1 + i * 0.05}s` })),
-              ...(user ? [
-                { href: "/oblibene", label: "Oblíbené", delay: "0.38s" },
-                { href: "/profil", label: "Profil", delay: "0.43s" },
-              ] : []),
-              ...(user?.role === "admin" ? [{ href: "/admin", label: "Admin", delay: "0.48s" }] : []),
+              ...navLinks.map((l, i) => ({
+                ...l,
+                delay: `${0.1 + i * 0.05}s`,
+              })),
+              ...(user
+                ? [
+                    { href: "/oblibene", label: "Oblíbené", delay: "0.38s" },
+                    { href: "/profil", label: "Profil", delay: "0.43s" },
+                  ]
+                : []),
+              ...(user?.role === "admin"
+                ? [{ href: "/admin", label: "Admin", delay: "0.48s" }]
+                : []),
             ].map(({ href, label, delay }) => (
               <Link
                 key={href}
@@ -216,10 +237,16 @@ export function Navbar({ user }: NavbarProps) {
                   transitionDelay: menuOpen ? delay : "0s",
                 }}
               >
-                <span className={`text-2xl font-extrabold tracking-tight transition-colors ${isActive(href) ? "text-white" : "text-white/40"}`}>
+                <span
+                  className={`text-2xl font-extrabold tracking-tight transition-colors ${isActive(href) ? "text-white" : "text-white/40"}`}
+                >
                   {label}
                 </span>
-                <span className={`text-2xl transition-opacity ${isActive(href) ? "opacity-100 text-white" : "opacity-30 text-white"}`}>→</span>
+                <span
+                  className={`text-2xl transition-opacity ${isActive(href) ? "opacity-100 text-white" : "opacity-30 text-white"}`}
+                >
+                  →
+                </span>
               </Link>
             ))}
           </nav>
@@ -235,7 +262,10 @@ export function Navbar({ user }: NavbarProps) {
           >
             {user ? (
               <button
-                onClick={() => { setMenuOpen(false); handleLogout(); }}
+                onClick={() => {
+                  setMenuOpen(false);
+                  handleLogout();
+                }}
                 className="w-full rounded-full border border-white/30 py-3.5 text-sm font-bold text-white/80 hover:text-white transition"
               >
                 Odhlásit se
