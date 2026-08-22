@@ -101,12 +101,17 @@ export interface Job {
   salary: string | null;
   position_count: number | null;
   application_due: string | null;
+  // Normalizovaná lhůta k přihlášení (ISO) z application_due; null = neznámá / "Snarest".
+  application_due_at: string | null;
   published_at: string | null;
   expires_at: string | null;
   source_url: string | null;
   application_url: string | null;
   is_featured: boolean;
   is_premium: boolean;
+  // Optional — kdy skript naposledy vyhodnotil premium (NULL = ještě nehodnoceno).
+  // Optional záměrně, aby nerozbil Omit<Job,...> v row-builderech (viz jobs.ts).
+  premium_evaluated_at?: string | null;
   is_active: boolean;
   requires_norwegian: boolean;
   includes_accommodation: boolean;
@@ -129,6 +134,7 @@ export interface LocalizedJob {
   engagementType: string | null;
   extent: string | null;
   applicationDue: string | null;
+  applicationDueAt: string | null;
   publishedAt: string | null;
   expiresAt: string | null;
   sourceUrl: string | null;

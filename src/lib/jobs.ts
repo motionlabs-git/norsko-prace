@@ -1,6 +1,7 @@
 import { createServerSupabase, supabaseAdmin } from "./supabase";
 import type { Job, LocalizedJob, NavVacancy } from "@/types";
 import type { FinnJob } from "./finn-api";
+import { parseApplicationDue } from "./application-utils";
 
 // ── Category mapping (NAV Norwegian → display) ─────────────────────────────
 export const CATEGORY_MAP: Record<string, { label: string; icon: string; color: string; badgeClass: string; accentClass: string; arrowClass: string }> = {
@@ -62,6 +63,15 @@ export function getCategoryMeta(categoryLevel1: string | null) {
 
 // ── Read operations ─────────────────────────────────────────────────────────
 
+// PostgREST `.or()` filtr: skryj joby s prošlou lhůtou k přihlášení.
+// application_due_at IS NULL (neznámá lhůta / "Snarest") → zobrazit.
+// Dnešek se ještě počítá jako otevřený (porovnává se od půlnoci UTC).
+function openApplicationOr(): string {
+  const start = new Date();
+  start.setUTCHours(0, 0, 0, 0);
+  return `application_due_at.is.null,application_due_at.gte.${start.toISOString()}`;
+}
+
 export async function getRecentJobs(limit = 6): Promise<Job[]> {
   const db = await createServerSupabase();
   const { data, error } = await db
@@ -70,6 +80,7 @@ export async function getRecentJobs(limit = 6): Promise<Job[]> {
     .eq("is_active", true)
     .eq("source", "nav")
     .eq("requires_norwegian", false)
+    .or(openApplicationOr())
     .order("published_at", { ascending: false })
     .limit(limit);
 
@@ -89,6 +100,7 @@ export async function getFeaturedJobs(limit = 3): Promise<Job[]> {
     .eq("is_featured", true)
     .eq("source", "nav")
     .eq("requires_norwegian", false)
+    .or(openApplicationOr())
     .order("published_at", { ascending: false })
     .limit(limit);
 
@@ -132,6 +144,7 @@ export async function getJobs({
     .from("jobs")
     .select("*", { count: "exact" })
     .eq("is_active", true)
+    .or(openApplicationOr())
     .order("source", { ascending: false })
     .order("published_at", { ascending: false });
 
@@ -151,7 +164,8 @@ export async function getJobs({
       const { count: total } = await db
         .from("jobs")
         .select("*", { count: "exact", head: true })
-        .eq("is_active", true);
+        .eq("is_active", true)
+        .or(openApplicationOr());
       return { jobs: [], total: total ?? 0 };
     }
     console.error("getJobs error:", error.message);
@@ -171,6 +185,7 @@ export async function getSimilarJobs(
     .select("*")
     .eq("is_active", true)
     .neq("id", currentId)
+    .or(openApplicationOr())
     .order("published_at", { ascending: false })
     .limit(limit);
 
@@ -247,6 +262,7 @@ export function localizeJob(job: Job): LocalizedJob {
     engagementType: translateEnum(ENGAGEMENT_TYPE, job.engagement_type),
     extent: translateEnum(EXTENT, job.extent),
     applicationDue: job.application_due,
+    applicationDueAt: job.application_due_at ?? null,
     publishedAt: job.published_at,
     expiresAt: job.expires_at,
     sourceUrl: job.source_url,
@@ -269,6 +285,7 @@ export async function getPremiumJobs(): Promise<Job[]> {
     .select("*")
     .eq("is_active", true)
     .eq("is_premium", true)
+    .or(openApplicationOr())
     .order("published_at", { ascending: false });
 
   if (error) return [];
@@ -330,6 +347,7 @@ export function vacancyToJobRow(
     salary: null,
     position_count: v.positioncount ? parseInt(v.positioncount, 10) : null,
     application_due: v.applicationDue ?? null,
+    application_due_at: parseApplicationDue(v.applicationDue),
     published_at: v.published ?? null,
     expires_at: v.expires ?? null,
     source_url: v.sourceurl ?? null,
@@ -418,6 +436,7 @@ export function finnJobToRow(
     salary: null,
     position_count: null,
     application_due: null,
+    application_due_at: null,
     published_at: job.datePosted ?? null,
     expires_at: job.validThrough ?? null,
     source_url: job.sourceUrl,

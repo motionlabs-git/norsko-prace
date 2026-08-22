@@ -65,10 +65,11 @@ export default async function JobDetailPage({ params }: Props) {
     return d.toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric" });
   };
 
-  const translateApplicationDue = (due: string) => {
+  const translateApplicationDue = (due: string, dueAt: string | null) => {
     const lower = due.toLowerCase().trim();
     if (lower === "snarest" || lower === "snarest mulig" || lower === "fortløpende") return "Co nejdříve";
-    return formatDate(due) ?? due;
+    // Preferuj normalizované datum (raw text může být DD.MM.YYYY, které new Date() misparsuje)
+    return formatDate(dueAt) ?? formatDate(due) ?? due;
   };
 
   return (
@@ -164,7 +165,7 @@ export default async function JobDetailPage({ params }: Props) {
                   {localized.engagementType && <DetailRow label="Typ" value={localized.engagementType} />}
                   {localized.extent && <DetailRow label="Rozsah" value={localized.extent} />}
                   {job.position_count && <DetailRow label="Počet míst" value={String(job.position_count)} />}
-                  {localized.applicationDue && <DetailRow label="Přihlásit do" value={translateApplicationDue(localized.applicationDue)} highlight />}
+                  {localized.applicationDue && <DetailRow label="Přihlásit do" value={translateApplicationDue(localized.applicationDue, localized.applicationDueAt)} highlight />}
                   {localized.publishedAt && <DetailRow label="Zveřejněno" value={formatDate(localized.publishedAt) ?? localized.publishedAt} />}
                   {job.sector && <DetailRow label="Sektor" value={translateSector(job.sector) ?? job.sector} />}
                 </dl>

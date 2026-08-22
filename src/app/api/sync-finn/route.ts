@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { iterateFinnFeed } from "@/lib/finn-api";
 import { translateBatch } from "@/lib/translate";
 import { upsertJobs, finnJobToRow } from "@/lib/jobs";
+import { evaluateNewPremium } from "@/lib/premium";
 import { hasBlockedTitle } from "@/lib/job-filter";
 
 export const maxDuration = 300;
@@ -49,5 +50,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, fetched, upserted });
+  // Ohodnotit nově vložené inzeráty pro "Vybrané" (premium). Odolné vůči timeoutu.
+  // Selhání hodnocení nesmí shodit celý sync.
+  let premiumStats = { evaluated: 0, premium: 0, failed: 0 };
+  try {
+    premiumStats = await evaluateNewPremium();
+  } catch (err) {
+    console.error("premium eval failed:", err instanceof Error ? err.message : err);
+  }
+
+  return NextResponse.json({
+    ok: true,
+    fetched,
+    upserted,
+    premiumEvaluated: premiumStats.evaluated,
+    premiumFlagged: premiumStats.premium,
+  });
 }

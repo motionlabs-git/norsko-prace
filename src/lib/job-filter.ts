@@ -36,17 +36,36 @@ export const BLOCKED_OCCUPATION_CATEGORIES = new Set([
 
 // Blokovaná klíčová slova v norském titulu — platí pro NAV i Finn
 export const BLOCKED_TITLE_KEYWORDS = [
-  // Zdravotnictví / péče
-  "sykepleier",
+  // Zdravotnictví / péče (norsky i dánsky — Finn feed obsahuje i dánské inzeráty)
+  "sykepleie",       // pokrývá sykepleier, anestesisykepleier, intensivsykepleier…
+  "sygeplejer",      // dánsky (sygeplejerske, anæstesisygeplejerske)
+  "sygepleje",       // dánsky varianta
   "hjelpepleier",
   "helsefagarbeider",
   "helsearbeider",
+  "helsesekretær",
   "pleieassistent",
   "omsorgsarbeider",
   "omsorgsperson",
   "vernepleier",
   "ergoterapeut",
   "fysioterapeut",
+  "jordmor",         // porodní asistentka
+  "bioingeni",       // bioingeniør / bioingenior (laborant)
+  "radiograf",
+  "farmasøyt",
+  "apoteker",
+  "tannlege",
+  "tannhelse",
+  "tannpleier",
+  "anestesi",
+  "anæstesi",        // dánsky
+  "legevakt",
+  "fastlege",
+  "ambulanse",
+  "sosionom",
+  "miljøterapeut",
+  "audiograf",
   "overlege",
   "psykolog",
   "barnehagelærer",

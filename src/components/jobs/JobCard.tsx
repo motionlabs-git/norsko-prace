@@ -24,7 +24,7 @@ function ChevronRight() {
 }
 
 export function JobCard({ job, meta, headingLevel = "h3", favoriteButton }: JobItem & { headingLevel?: "h2" | "h3"; favoriteButton?: ReactNode }) {
-  const due = formatDue(job.applicationDue);
+  const due = formatDue(job.applicationDueAt ?? job.applicationDue);
   const Heading = headingLevel;
   const appType = getApplicationType(job.applicationUrl ?? null);
 

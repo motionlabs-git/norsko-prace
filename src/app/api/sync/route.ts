@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { iterateFeed } from "@/lib/nav-api";
 import { translateBatch } from "@/lib/translate";
 import { upsertJobs, deactivateJobs, vacancyToJobRow } from "@/lib/jobs";
+import { evaluateNewPremium } from "@/lib/premium";
 import { supabaseAdmin } from "@/lib/supabase";
 import type { NavVacancy } from "@/types";
 
@@ -101,6 +102,15 @@ export async function GET(request: NextRequest) {
 
   const totalExpired = expiredData?.length ?? 0;
 
+  // Ohodnotit nově vložené inzeráty pro "Vybrané" (premium). Odolné vůči timeoutu.
+  // Selhání hodnocení nesmí shodit celý sync.
+  let premiumStats = { evaluated: 0, premium: 0, failed: 0 };
+  try {
+    premiumStats = await evaluateNewPremium();
+  } catch (err) {
+    console.error("premium eval failed:", err instanceof Error ? err.message : err);
+  }
+
   await db.from("sync_log").insert({
     synced_at: syncStarted,
     pages,
@@ -121,6 +131,8 @@ export async function GET(request: NextRequest) {
     deactivatedExpired: totalExpired,
     filteredNorwegian: totalFilteredNorwegian,
     filteredNoContact: totalFilteredNoContact,
+    premiumEvaluated: premiumStats.evaluated,
+    premiumFlagged: premiumStats.premium,
     syncedAt: syncStarted,
   });
 }
