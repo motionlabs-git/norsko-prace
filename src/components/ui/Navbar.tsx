@@ -155,7 +155,7 @@ export function Navbar({ user }: NavbarProps) {
             ) : (
               <Link
                 href="/auth/login"
-                className="hidden md:inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-5 py-2 text-sm font-bold text-white shadow-md transition hover:bg-[var(--color-primary-dark)] hover:shadow-lg"
+                className="cta-arrow hidden md:inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-5 py-2 text-sm font-bold text-white shadow-md transition hover:bg-[var(--color-primary-dark)] hover:shadow-lg"
               >
                 Přihlásit se
               </Link>
@@ -274,7 +274,7 @@ export function Navbar({ user }: NavbarProps) {
               <Link
                 href="/auth/login"
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center justify-center gap-2 w-full rounded-full bg-white py-4 text-base font-bold text-[var(--color-primary)] transition hover:opacity-90"
+                className="cta-arrow flex items-center justify-center gap-2 w-full rounded-full bg-white py-4 text-base font-bold text-[var(--color-primary)] transition hover:opacity-90"
               >
                 Přihlásit se
               </Link>

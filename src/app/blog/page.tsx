@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getBlogPosts } from "@/lib/blog";
+import { Reveal } from "@/components/ui/Reveal";
 
 export const revalidate = 3600;
 
@@ -30,7 +31,7 @@ export default async function BlogPage({ searchParams }: Props) {
 
   return (
     <>
-      <section className="pb-0 pt-16" style={{ background: "linear-gradient(135deg, #001849 0%, #003087 100%)" }}>
+      <section className="pt-16 pb-24" style={{ background: "linear-gradient(135deg, #001849 0%, #003087 100%)" }}>
         <div className="mx-auto max-w-6xl px-4 md:px-8">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 backdrop-blur-sm border border-white/20">
             <span className="h-1.5 w-1.5 rounded-full bg-[#C8102E]" />
@@ -53,12 +54,10 @@ export default async function BlogPage({ searchParams }: Props) {
               ))}
             </div>
           )}
-
-          <div className="mt-8 h-6 rounded-t-3xl bg-[var(--color-bg)]" />
         </div>
       </section>
 
-      <section className="bg-[var(--color-bg)] py-8">
+      <section className="relative -mt-10 rounded-t-[2rem] bg-[var(--color-bg)] py-12">
         <div className="mx-auto max-w-6xl px-4 md:px-8">
           {posts.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[var(--color-border)] py-20 text-center">
@@ -67,10 +66,11 @@ export default async function BlogPage({ searchParams }: Props) {
             </div>
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {posts.map((post) => {
+              {posts.map((post, i) => {
                 const { bg, text } = categoryStyle(post.category);
                 return (
-                  <Link key={post.slug} href={`/blog/${post.slug}`} className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-[var(--shadow-sm)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[var(--shadow-md)]">
+                  <Reveal key={post.slug} delay={i * 70} className="h-full *:h-full">
+                  <Link href={`/blog/${post.slug}`} className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-[var(--shadow-sm)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[var(--shadow-md)]">
                     <div className="h-1 w-full bg-[var(--color-accent)]" />
                     <div className="flex flex-1 flex-col p-6">
                       <span className={`mb-3 inline-block self-start rounded-full px-3 py-1 text-xs font-semibold ${bg} ${text}`}>{post.category}</span>
@@ -85,6 +85,7 @@ export default async function BlogPage({ searchParams }: Props) {
                       </div>
                     </div>
                   </Link>
+                  </Reveal>
                 );
               })}
             </div>

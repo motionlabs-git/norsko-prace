@@ -43,8 +43,8 @@ export default async function OblibenenePage() {
               <p className="text-4xl mb-4">♡</p>
               <p className="text-lg font-semibold text-[var(--color-text)] mb-2">Žádné oblíbené inzeráty</p>
               <p className="text-sm text-[var(--color-text-muted)] mb-6">Klikni na srdíčko na kartičce inzerátu a ulož si ho sem.</p>
-              <Link href="/prace" className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[var(--color-primary-dark)] transition">
-                Procházet inzeráty →
+              <Link href="/prace" className="cta-arrow inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[var(--color-primary-dark)] transition">
+                Procházet inzeráty
               </Link>
             </div>
           ) : (

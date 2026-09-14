@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getFeaturedJobs, localizeJob, getCategoryMeta } from "@/lib/jobs";
 import { JobCard } from "@/components/jobs/JobCard";
+import { Reveal } from "@/components/ui/Reveal";
 
 export const revalidate = 3600;
 
@@ -85,9 +86,9 @@ function HeroSection() {
         <div className="flex flex-wrap items-center gap-4">
           <Link
             href="/prace"
-            className="inline-flex items-center gap-2 rounded-full bg-[#C8102E] px-8 py-4 text-base font-bold text-white shadow-lg transition hover:bg-[#9e0b21] hover:shadow-xl"
+            className="cta-arrow inline-flex items-center gap-2 rounded-full bg-[#C8102E] px-8 py-4 text-base font-bold text-white shadow-lg transition hover:bg-[#9e0b21] hover:shadow-xl"
           >
-            Procházet inzeráty →
+            Procházet inzeráty
           </Link>
           <a
             href="#jak-to-funguje"
@@ -125,6 +126,7 @@ function FeaturedJobs({ items }: { items: JobItem[] }) {
   return (
     <section className="bg-white py-20">
       <div className="mx-auto max-w-6xl px-4 md:px-8">
+        <Reveal>
         <div className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#fde8ec] px-3.5 py-1.5">
@@ -147,11 +149,14 @@ function FeaturedJobs({ items }: { items: JobItem[] }) {
             Zobrazit vše →
           </Link>
         </div>
+        </Reveal>
 
         {items.length > 0 ? (
           <div className="grid gap-5 md:grid-cols-3">
-            {items.map(({ job, meta }) => (
-              <JobCard key={job.id} job={job} meta={meta} headingLevel="h3" />
+            {items.map(({ job, meta }, i) => (
+              <Reveal key={job.id} delay={i * 90} className="h-full *:h-full">
+                <JobCard job={job} meta={meta} headingLevel="h3" />
+              </Reveal>
             ))}
           </div>
         ) : (
@@ -222,6 +227,7 @@ function HowItWorks() {
       </div>
 
       <div className="relative mx-auto max-w-3xl px-4 md:px-8">
+        <Reveal>
         <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 backdrop-blur-sm border border-white/15">
           <span className="h-1.5 w-1.5 rounded-full bg-[#C8102E]" />
           <span className="text-xs font-bold uppercase tracking-widest text-white/80">Jak to funguje</span>
@@ -231,6 +237,7 @@ function HowItWorks() {
           <br />
           <span className="text-white/40">ve čtyřech krocích</span>
         </h2>
+        </Reveal>
 
         <div className="relative">
           <div
@@ -239,7 +246,8 @@ function HowItWorks() {
           />
           <div className="space-y-0">
             {steps.map((step, i) => (
-              <div key={step.num} className="relative flex gap-8 md:gap-10 pb-12 last:pb-0">
+              <Reveal key={step.num} delay={i * 100}>
+              <div className="relative flex gap-8 md:gap-10 pb-12 last:pb-0">
                 <div className="relative flex-shrink-0">
                   <div
                     className="relative z-10 flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full border-2 text-white font-extrabold text-sm"
@@ -274,6 +282,7 @@ function HowItWorks() {
                   )}
                 </div>
               </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -304,7 +313,7 @@ function BlogCta() {
         <div className="absolute -left-10 bottom-0 h-52 w-52 rounded-full bg-white opacity-[0.05]" />
       </div>
       <div className="relative mx-auto max-w-6xl px-4 md:px-8">
-        <div className="max-w-2xl">
+        <Reveal className="max-w-2xl">
           <h2 className="mb-4 text-3xl font-extrabold tracking-tight text-white md:text-4xl">
             Průvodci pro práci v Norsku
           </h2>
@@ -317,7 +326,7 @@ function BlogCta() {
           >
             Číst průvodce →
           </Link>
-        </div>
+        </Reveal>
       </div>
     </section>
   );

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getBlogPost, getBlogPosts } from "@/lib/blog";
 import { buildBreadcrumb } from "@/lib/seo";
 import { MDXRemote } from "next-mdx-remote/rsc";
+import remarkGfm from "remark-gfm";
 
 export const revalidate = 3600;
 
@@ -74,44 +75,20 @@ export default async function BlogPostPage({ params }: Props) {
 
       <section className="bg-[var(--color-bg)] py-12">
         <div className="mx-auto max-w-3xl px-4 md:px-8">
-          <div className="grid gap-10 lg:grid-cols-[1fr_220px]">
-            <article className="prose prose-base max-w-none
-              prose-headings:font-extrabold prose-headings:tracking-tight prose-headings:text-[var(--color-text)]
-              prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4
-              prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
-              prose-p:text-[var(--color-text)] prose-p:leading-relaxed
-              prose-a:text-[var(--color-primary)] prose-a:no-underline hover:prose-a:underline
-              prose-strong:text-[var(--color-text)]
-              prose-ul:pl-5 prose-li:my-1
-              prose-table:text-sm
-              prose-th:bg-[var(--color-primary-light)] prose-th:text-[var(--color-primary)] prose-th:font-semibold prose-th:px-4 prose-th:py-2
-              prose-td:px-4 prose-td:py-2 prose-td:border-b prose-td:border-[var(--color-border)]
-              prose-hr:border-[var(--color-border)] prose-hr:my-10
-            ">
-              <MDXRemote source={post.content} />
-            </article>
+          <article className="prose max-w-none">
+            <MDXRemote
+              source={post.content}
+              options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
+            />
+          </article>
 
-            <aside className="hidden lg:block">
-              <div className="sticky top-24 space-y-4">
-                <Link href="/blog" className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 rotate-180"><path d="M9 18l6-6-6-6" /></svg>
-                  Všechny průvodce
-                </Link>
-                <div className="rounded-2xl bg-[var(--color-primary)] p-5 text-white">
-                  <p className="mb-3 text-sm font-bold leading-snug">Hledáš práci v Norsku?</p>
-                  <p className="mb-4 text-xs text-white/75 leading-relaxed">Stovky sezónních nabídek přeložených do češtiny.</p>
-                  <Link href="/prace" className="block rounded-full bg-white py-2.5 text-center text-xs font-bold text-[var(--color-primary)] transition hover:opacity-90">
-                    Procházet nabídky →
-                  </Link>
-                </div>
-              </div>
-            </aside>
-          </div>
-
-          <div className="mt-6 lg:hidden rounded-2xl bg-[var(--color-primary)] p-5 text-white">
-            <p className="mb-3 text-sm font-bold">Hledáš práci v Norsku?</p>
-            <Link href="/prace" className="block rounded-full bg-white py-2.5 text-center text-xs font-bold text-[var(--color-primary)]">
-              Procházet nabídky →
+          <div className="mt-12 flex flex-col items-start gap-4 rounded-2xl bg-[var(--color-primary)] p-6 text-white sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-base font-bold">Hledáš práci v Norsku?</p>
+              <p className="mt-1 text-sm text-white/75">Stovky sezónních nabídek přeložených do češtiny.</p>
+            </div>
+            <Link href="/prace" className="cta-arrow inline-flex flex-shrink-0 items-center rounded-full bg-white px-6 py-2.5 text-sm font-bold text-[var(--color-primary)] transition hover:opacity-90">
+              Procházet nabídky
             </Link>
           </div>
 

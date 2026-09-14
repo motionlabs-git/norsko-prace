@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Navbar } from "@/components/ui/Navbar";
 import { Footer } from "@/components/ui/Footer";
+import { PostHogProvider } from "./providers";
 import { createClient } from "@/utils/supabase/server";
 import "./globals.css";
 
@@ -42,9 +43,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="cs" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
-        <Navbar user={user ? { email: user.email ?? "", fullName, role } : null} />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <PostHogProvider user={user ? { distinctId: user.id, email: user.email ?? "" } : null}>
+          <Navbar user={user ? { email: user.email ?? "", fullName, role } : null} />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </PostHogProvider>
       </body>
     </html>
   );

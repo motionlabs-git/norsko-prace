@@ -76,10 +76,17 @@ export default function PrivacyPage() {
               <a href="https://www.uoou.cz" target="_blank" rel="noopener noreferrer">uoou.cz</a>).
             </p>
 
-            <h2>7. Soubory cookie</h2>
+            <h2>7. Soubory cookie a analytika</h2>
             <p>
-              Web používá technicky nezbytné soubory cookie pro autentizaci (relační cookie Supabase).
-              Analytické ani marketingové cookies nepoužíváme.
+              Web používá technicky nezbytné soubory cookie pro autentizaci (relační cookie Supabase),
+              které nevyžadují souhlas.
+            </p>
+            <p>
+              Dále používáme <strong>analytické cookies a nástroj PostHog</strong> (PostHog, provoz na
+              serverech v EU) k pochopení toho, jak návštěvníci web používají, a k jeho zlepšování —
+              například měření návštěvnosti, pohybu po stránkách a záznamy relací v anonymizované podobě.
+              Tyto cookies používáme <strong>pouze s vaším souhlasem</strong>, o který žádáme prostřednictvím
+              cookie lišty při první návštěvě. Souhlas můžete kdykoli odvolat vymazáním cookies v prohlížeči.
             </p>
 
             <h2>8. Změny zásad</h2>

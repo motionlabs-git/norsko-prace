@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getBlogPost, getBlogPosts } from "@/lib/blog";
 import { MDXRemote } from "next-mdx-remote/rsc";
+import remarkGfm from "remark-gfm";
 
 export const revalidate = 3600;
 
@@ -59,20 +60,11 @@ export default async function PruvodceDetailPage({ params }: Props) {
       <section className="bg-[var(--color-bg)] py-12">
         <div className="mx-auto max-w-3xl px-4 md:px-8">
           <div className="grid gap-10 lg:grid-cols-[1fr_220px]">
-            <article className="prose prose-base max-w-none
-              prose-headings:font-extrabold prose-headings:tracking-tight prose-headings:text-[var(--color-text)]
-              prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4
-              prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
-              prose-p:text-[var(--color-text)] prose-p:leading-relaxed
-              prose-a:text-[var(--color-primary)] prose-a:no-underline hover:prose-a:underline
-              prose-strong:text-[var(--color-text)]
-              prose-ul:pl-5 prose-li:my-1
-              prose-table:text-sm prose-table:w-full
-              prose-th:bg-[var(--color-primary-light)] prose-th:text-[var(--color-primary)] prose-th:font-semibold prose-th:px-4 prose-th:py-2 prose-th:text-left
-              prose-td:px-4 prose-td:py-2 prose-td:border-b prose-td:border-[var(--color-border)]
-              prose-hr:border-[var(--color-border)] prose-hr:my-10
-            ">
-              <MDXRemote source={post.content} />
+            <article className="prose max-w-none">
+              <MDXRemote
+                source={post.content}
+                options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
+              />
             </article>
 
             <aside className="hidden lg:block">
@@ -93,7 +85,7 @@ export default async function PruvodceDetailPage({ params }: Props) {
                 <div className="rounded-2xl bg-[var(--color-primary)] p-5 text-white">
                   <p className="mb-2 text-sm font-bold leading-snug">Hledáš práci v Norsku?</p>
                   <p className="mb-4 text-xs text-white/75 leading-relaxed">Stovky sezónních nabídek přeložených do češtiny.</p>
-                  <Link href="/prace" className="block rounded-full bg-white py-2.5 text-center text-xs font-bold text-[var(--color-primary)] transition hover:opacity-90">Procházet nabídky →</Link>
+                  <Link href="/prace" className="cta-arrow block rounded-full bg-white py-2.5 text-center text-xs font-bold text-[var(--color-primary)] transition hover:opacity-90">Procházet nabídky</Link>
                 </div>
               </div>
             </aside>
@@ -103,13 +95,13 @@ export default async function PruvodceDetailPage({ params }: Props) {
             <div className="mt-10 lg:hidden rounded-2xl border border-[var(--color-border)] bg-white p-5">
               <p className="mb-1 text-xs font-bold uppercase tracking-wide text-[var(--color-text-muted)]">Další průvodce</p>
               <p className="mb-3 text-sm font-bold text-[var(--color-text)]">{nextPost.title}</p>
-              <Link href={`/pruvodce/${nextPost.slug}`} className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-4 py-2 text-xs font-bold text-white">Číst průvodce →</Link>
+              <Link href={`/pruvodce/${nextPost.slug}`} className="cta-arrow inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-4 py-2 text-xs font-bold text-white">Číst průvodce</Link>
             </div>
           )}
 
           <div className="mt-6 lg:hidden rounded-2xl bg-[var(--color-primary)] p-5 text-white">
             <p className="mb-3 text-sm font-bold">Hledáš práci v Norsku?</p>
-            <Link href="/prace" className="block rounded-full bg-white py-2.5 text-center text-xs font-bold text-[var(--color-primary)]">Procházet nabídky →</Link>
+            <Link href="/prace" className="cta-arrow block rounded-full bg-white py-2.5 text-center text-xs font-bold text-[var(--color-primary)]">Procházet nabídky</Link>
           </div>
 
           <div className="mt-10 border-t border-[var(--color-border)] pt-8">

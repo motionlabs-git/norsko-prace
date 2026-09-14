@@ -136,8 +136,8 @@ export default async function JobDetailPage({ params }: Props) {
             <div className="space-y-4">
               {localized.applicationUrl && (
                 <div className="space-y-2">
-                  <a href={localized.applicationUrl} target="_blank" rel="noopener noreferrer" className="block w-full rounded-full bg-[var(--color-primary)] py-3.5 text-center text-sm font-bold text-white transition hover:bg-[var(--color-primary-dark)]">
-                    Přihlásit se →
+                  <a href={localized.applicationUrl} target="_blank" rel="noopener noreferrer" className="cta-arrow block w-full rounded-full bg-[var(--color-primary)] py-3.5 text-center text-sm font-bold text-white transition hover:bg-[var(--color-primary-dark)]">
+                    Přihlásit se
                   </a>
                   {appType === "portal" && (
                     <p className="text-center text-xs text-[var(--color-text-muted)]">Přihláška přes pracovní portál</p>
