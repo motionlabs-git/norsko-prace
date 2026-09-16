@@ -24,10 +24,16 @@ export async function POST(request: NextRequest) {
   }
 
   const origin = request.headers.get("origin") ?? request.nextUrl.origin;
-  const session = await stripe.billingPortal.sessions.create({
-    customer: sub.stripe_customer_id,
-    return_url: `${origin}/profil`,
-  });
-
-  return NextResponse.json({ url: session.url });
+  try {
+    const session = await stripe.billingPortal.sessions.create({
+      customer: sub.stripe_customer_id,
+      return_url: `${origin}/profil`,
+    });
+    return NextResponse.json({ url: session.url });
+  } catch (err) {
+    // Nejčastěji: v ostrém režimu není aktivovaný zákaznický portál
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("Stripe portal selhal:", message);
+    return NextResponse.json({ error: "Portál se nepodařilo otevřít", detail: message.slice(0, 200) }, { status: 500 });
+  }
 }
