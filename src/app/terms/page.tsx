@@ -26,7 +26,7 @@ export default function TermsPage() {
             <h2>1. Provozovatel</h2>
             <p>
               Tyto podmínky upravují používání webu <strong>Norsko-práce.cz</strong> provozovaného
-              fyzickou nebo právnickou osobou pověřenou provozem (dále jen „provozovatel").
+              fyzickou nebo právnickou osobou pověřenou provozem (dále jen „provozovatel“).
               Kontakt: <a href="mailto:info@norsko-prace.cz">info@norsko-prace.cz</a>
             </p>
 
@@ -53,7 +53,47 @@ export default function TermsPage() {
               informací. Před podáním přihlášky vždy ověřte aktuální stav přímo u zaměstnavatele.
             </p>
 
-            <h2>5. Zakázané chování</h2>
+            <h2>5. Předplatné Premium</h2>
+            <p>
+              Základní obsah webu (inzeráty včetně popisu pozice, blog, průvodce) je zdarma. Předplatné
+              <strong> Founding Premium</strong> odemyká kontaktní údaje zaměstnavatele a odkaz na přihlášení
+              u všech inzerátů a sekci „Vybrané práce“. Registrovaný uživatel bez předplatného uvidí kontakt
+              a odkaz na přihlášení zdarma u prvních 10 inzerátů, jejichž detail otevře; otevřením detailu
+              se jeden z těchto kontaktů čerpá. Opakované otevření téhož inzerátu limit znovu nečerpá.
+            </p>
+            <ul>
+              <li><strong>Founding Premium</strong> — 149 Kč / měsíc; cena zůstává zamčená po celou dobu
+                nepřerušeného trvání předplatného</li>
+            </ul>
+            <p>
+              Funkce, které web označuje jako připravované, nejsou součástí předplatného, dokud nejsou
+              spuštěny.
+            </p>
+            <p>
+              Uvedená cena je konečná částka, kterou zaplatíš. Předplatné se <strong>automaticky obnovuje</strong> vždy
+              na další měsíc, dokud jej nezrušíš. Platby zpracovává{" "}
+              <strong>Stripe Payments Europe, Ltd.</strong>; údaje o platební kartě zadáváš přímo
+              u Stripe a provozovatel k nim nemá přístup.
+            </p>
+            <p>
+              <strong>Zrušení:</strong> předplatné můžeš kdykoli zrušit ve svém profilu (Spravovat
+              předplatné). Zrušení je účinné ke konci již zaplaceného období — přístup ti zůstává
+              do jeho konce a další platba se neprovede.
+            </p>
+            <p>
+              <strong>Odstoupení od smlouvy:</strong> jako spotřebitel máš právo odstoupit od smlouvy
+              do 14 dnů. Aktivací předplatného výslovně žádáš o okamžité zpřístupnění digitálního
+              obsahu a bereš na vědomí, že tím právo na odstoupení zaniká. Pokud přesto do 14 dnů od
+              první platby odstoupíš a služby jsi využil jen v zanedbatelném rozsahu, vrátíme ti
+              uhrazenou částku — napiš na{" "}
+              <a href="mailto:info@norsko-prace.cz">info@norsko-prace.cz</a>.
+            </p>
+            <p>
+              Provozovatel si vyhrazuje právo měnit ceny nově sjednaných předplatných. Cena Founding
+              Premium se po dobu nepřerušeného trvání předplatného nemění.
+            </p>
+
+            <h2>6. Zakázané chování</h2>
             <ul>
               <li>Automatické stahování obsahu (scraping) bez písemného souhlasu</li>
               <li>Vytváření falešných účtů nebo uvádění nepravdivých údajů</li>
@@ -61,28 +101,28 @@ export default function TermsPage() {
               <li>Používání služby v rozporu s platnými právními předpisy</li>
             </ul>
 
-            <h2>6. Duševní vlastnictví</h2>
+            <h2>7. Duševní vlastnictví</h2>
             <p>
               Obsah webu (design, překlady, průvodce, texty) je duševním vlastnictvím provozovatele
               nebo je poskytnut na základě licence. Pracovní inzeráty jsou majetkem jejich původních
               autorů (NAV, Finn.no). Kopírování obsahu bez svolení je zakázáno.
             </p>
 
-            <h2>7. Omezení odpovědnosti</h2>
+            <h2>8. Omezení odpovědnosti</h2>
             <p>
               Provozovatel nenese odpovědnost za přímé ani nepřímé škody vzniklé v souvislosti
               s využitím informací z webu, ztrátou zaměstnání, odmítnutím přihlášky ani jinými
               důsledky plynoucími ze sezónní práce v Norsku.
             </p>
 
-            <h2>8. Změny podmínek</h2>
+            <h2>9. Změny podmínek</h2>
             <p>
               Provozovatel si vyhrazuje právo podmínky kdykoli změnit. O podstatných změnách budou
               registrovaní uživatelé informováni e-mailem. Dalším používáním služby po změně
               vyjadřujete souhlas s aktuálním zněním podmínek.
             </p>
 
-            <h2>9. Rozhodné právo</h2>
+            <h2>10. Rozhodné právo</h2>
             <p>
               Tyto podmínky se řídí právem České republiky. Případné spory budou řešeny
               příslušnými soudy České republiky.

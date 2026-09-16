@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { getJobs, getPremiumJobs, getUserFavoriteIds, localizeJob, getCategoryMeta, CATEGORY_MAP, getDistinctCities } from "@/lib/jobs";
 import { JobFilters } from "@/components/jobs/JobFilters";
+import { JobSearch } from "@/components/jobs/JobSearch";
+import { WorkPeriodPicker } from "@/components/jobs/WorkPeriodPicker";
 import { JobCard } from "@/components/jobs/JobCard";
 import { FavoriteButton } from "@/components/jobs/FavoriteButton";
 import { createClient } from "@/utils/supabase/server";
+import { getEntitlement, hasPremium } from "@/lib/entitlement";
 
 export const revalidate = 1800;
 
@@ -47,25 +50,35 @@ function Pagination({ page, totalPages, buildHref }: { page: number; totalPages:
   );
 }
 
-function buildQueryString(params: { category: string; engagementType: string; city: string; page: number }) {
+function buildQueryString(params: { category: string; engagementType: string; city: string; search: string; accommodation: boolean; period?: { from: string; to: string; onlyKnown?: boolean }; page: number }) {
   const q = new URLSearchParams();
+  if (params.search) q.set("q", params.search);
+  if (params.period) {
+    q.set("od", params.period.from);
+    q.set("do", params.period.to);
+    if (params.period.onlyKnown) q.set("termin", "1");
+  }
   if (params.category) q.set("category", params.category);
   if (params.engagementType) q.set("type", params.engagementType);
   if (params.city) q.set("city", params.city);
+  if (params.accommodation) q.set("ubytovani", "1");
   if (params.page > 1) q.set("page", String(params.page));
   const s = q.toString();
   return `/prace${s ? `?${s}` : ""}`;
 }
 
 interface Props {
-  searchParams: Promise<{ category?: string; type?: string; city?: string; page?: string; ubytovani?: string }>;
+  searchParams: Promise<{ category?: string; type?: string; city?: string; page?: string; ubytovani?: string; q?: string; od?: string; do?: string; termin?: string }>;
 }
 
-export async function generateMetadata() {
+export async function generateMetadata({ searchParams }: Props) {
+  const { q, od } = await searchParams;
   const { total } = await getJobs({ pageSize: 1 });
   return {
     title: `Pracovní nabídky v Norsku | ${total} sezónních pozic`,
     description: `Procházej ${total} aktuálních sezónních pracovních nabídek v Norsku přeložených do češtiny.`,
+    // výsledky hledání neindexovat (tenký/duplicitní obsah); odkazy z nich ano
+    ...(q || od ? { robots: { index: false, follow: true } } : {}),
   };
 }
 
@@ -77,13 +90,24 @@ export default async function PracePage({ searchParams }: Props) {
   const engagementType = filters.type ?? "";
   const city = filters.city ?? "";
   const accommodation = filters.ubytovani === "1";
+  const search = (filters.q ?? "").trim().slice(0, 80);
+  // Termín pobytu (?od=YYYY-MM-DD&do=YYYY-MM-DD[&termin=1])
+  const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+  let periodFrom = DATE_RE.test(filters.od ?? "") ? filters.od! : "";
+  let periodTo = periodFrom && DATE_RE.test(filters.do ?? "") ? filters.do! : periodFrom;
+  if (periodTo < periodFrom) [periodFrom, periodTo] = [periodTo, periodFrom];
+  const onlyKnownPeriod = filters.termin === "1";
+  const period = periodFrom ? { from: periodFrom, to: periodTo, onlyKnown: onlyKnownPeriod } : undefined;
+  const fmtDay = (d: string) => new Date(d).toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric" });
   const page = Math.max(1, parseInt(filters.page ?? "1", 10));
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const ent = await getEntitlement(user?.id);
+  const canSeePremium = hasPremium(ent);
 
   const [{ jobs, total }, cities, premiumJobs, favoriteIds] = await Promise.all([
-    getJobs({ category: category || undefined, engagementType: engagementType || undefined, city: city || undefined, norwegianOk: false, accommodation: accommodation || undefined, page, pageSize: PAGE_SIZE }),
+    getJobs({ category: category || undefined, engagementType: engagementType || undefined, city: city || undefined, search: search || undefined, period, norwegianOk: false, accommodation: accommodation || undefined, page, pageSize: PAGE_SIZE }),
     getDistinctCities(),
     getPremiumJobs(),
     user ? getUserFavoriteIds(user.id) : Promise.resolve([]),
@@ -104,39 +128,61 @@ export default async function PracePage({ searchParams }: Props) {
           </div>
           <h1 className="text-3xl font-extrabold text-white md:text-5xl">Nabídky práce v Norsku</h1>
           <p className="mt-3 max-w-xl text-white/65">
-            {total > 0 ? `${total} sezónních pozic — aktualizováno denně` : "Sezónní a krátkodobé pozice přeložené do češtiny"}
+            Sezónní a krátkodobé pozice přeložené do češtiny — aktualizováno denně
           </p>
+          <div className="mt-7">
+            <JobSearch key={search} initialQuery={search} />
+          </div>
         </div>
       </section>
 
       <section className="bg-[var(--color-bg)] py-10">
         <div className="mx-auto max-w-6xl px-4 md:px-8">
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <JobFilters category={category} engagementType={engagementType} city={city} cities={cities} accommodation={accommodation} />
-            <p className="text-sm text-[var(--color-text-muted)]">
-              {total} nabídek{category ? ` · ${categoryLabel}` : ""}
-            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+              <JobFilters category={category} engagementType={engagementType} city={city} cities={cities} accommodation={accommodation} />
+              <WorkPeriodPicker
+                key={`${periodFrom}|${periodTo}|${onlyKnownPeriod}`}
+                initialFrom={periodFrom}
+                initialTo={periodTo}
+                initialOnlyKnown={onlyKnownPeriod}
+              />
+            </div>
+            <div className="text-sm text-[var(--color-text-muted)] sm:text-right">
+              <p>
+                {total} nabídek{search ? ` pro „${search}“` : ""}{category ? ` · ${categoryLabel}` : ""}
+                {period ? ` · ${fmtDay(period.from)} – ${fmtDay(period.to)}` : ""}
+              </p>
+              {period && !onlyKnownPeriod && (
+                <p className="mt-0.5 text-xs">Nahoře nabídky pro tvůj termín, pod nimi ty bez uvedeného termínu.</p>
+              )}
+            </div>
           </div>
 
           {localized.length > 0 ? (
             <div className="grid gap-5 sm:grid-cols-2">
               {localized.map(({ job, meta }) => (
-                <JobCard key={job.id} job={job} meta={meta} headingLevel="h2"
+                <JobCard key={job.id} job={job} meta={meta} headingLevel="h2" showMissingPeriod={Boolean(period)}
                   favoriteButton={user ? <FavoriteButton jobId={job.id} initialFavorited={favoriteIds.includes(job.id)} /> : undefined}
                 />
               ))}
             </div>
           ) : (
             <div className="rounded-2xl border border-dashed border-[var(--color-border)] py-20 text-center">
-              <p className="text-lg text-[var(--color-text-muted)]">Žádné nabídky nenalezeny</p>
-              {(category || engagementType) && (
+              <p className="text-lg text-[var(--color-text-muted)]">
+                {search ? `Pro „${search}“ jsme nic nenašli` : "Žádné nabídky nenalezeny"}
+              </p>
+              {search && (
+                <p className="mt-1 text-sm text-[var(--color-text-muted)]">Zkus jiné nebo obecnější slovo, případně zruš filtry.</p>
+              )}
+              {(category || engagementType || city || accommodation || search || period) && (
                 <Link href="/prace" className="mt-4 inline-block text-sm font-semibold text-[var(--color-primary)] hover:underline">Zrušit filtry →</Link>
               )}
             </div>
           )}
 
           {totalPages > 1 && (
-            <Pagination page={page} totalPages={totalPages} buildHref={(p) => buildQueryString({ category, engagementType, city, page: p })} />
+            <Pagination page={page} totalPages={totalPages} buildHref={(p) => buildQueryString({ category, engagementType, city, search, accommodation, period, page: p })} />
           )}
         </div>
       </section>
@@ -149,12 +195,12 @@ export default async function PracePage({ searchParams }: Props) {
                 <span className="rounded-full bg-[var(--color-primary)] px-3 py-1 text-xs font-bold text-white uppercase tracking-wider">★ Vybrané inzeráty</span>
                 <p className="hidden text-sm text-[var(--color-text-muted)] sm:block">Ručně vybrané příležitosti</p>
               </div>
-              {user && (
+              {canSeePremium && (
                 <Link href="/vybrane" className="text-xs font-semibold text-[var(--color-primary)] hover:underline">Zobrazit vše →</Link>
               )}
             </div>
 
-            {user ? (
+            {canSeePremium ? (
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {localizedPremium.map(({ job, meta }) => (
                   <JobCard key={job.id} job={job} meta={meta} headingLevel="h2"
@@ -190,14 +236,16 @@ export default async function PracePage({ searchParams }: Props) {
                   <div className="rounded-2xl bg-white/95 backdrop-blur-sm shadow-lg border border-[var(--color-border)] px-8 py-6 text-center max-w-xs">
                     <p className="text-2xl mb-2">🔒</p>
                     <h3 className="text-base font-extrabold text-[var(--color-text)] mb-1">Vybrané inzeráty</h3>
-                    <p className="text-sm text-[var(--color-text-muted)] mb-4">Přihlas se zdarma a zobraz ručně vybrané nabídky.</p>
+                    <p className="text-sm text-[var(--color-text-muted)] mb-4">Ručně vybrané a ověřené nabídky odemkneš s Premium.</p>
                     <div className="flex flex-col gap-2">
-                      <Link href="/auth/register" className="cta-arrow inline-flex items-center justify-center gap-1.5 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 transition">
-                        Registrovat se zdarma
+                      <Link href="/premium" className="cta-arrow inline-flex items-center justify-center gap-1.5 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 transition">
+                        Odemknout s Premium
                       </Link>
-                      <Link href="/auth/login" className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition">
-                        Už mám účet — přihlásit se
-                      </Link>
+                      {!user && (
+                        <Link href="/auth/login" className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition">
+                          Už mám předplatné — přihlásit se
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </div>

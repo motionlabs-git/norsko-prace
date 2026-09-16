@@ -58,6 +58,10 @@ export default function PrivacyPage() {
               <li><strong>Supabase Inc.</strong> — databáze a autentizace (EU region)</li>
               <li><strong>Vercel Inc.</strong> — hosting (EU region)</li>
               <li><strong>Resend Inc.</strong> — odesílání e-mailů</li>
+              <li><strong>PostHog, Inc.</strong> — analytika návštěvnosti (EU region)</li>
+              <li><strong>Stripe Payments Europe, Ltd.</strong> — zpracování platby předplatného
+                (jméno, e-mail, fakturační údaje a údaje o platbě; platební kartu zadáváte přímo
+                u Stripe, na naše servery se nedostane)</li>
             </ul>
             <p>Všichni zpracovatelé jsou smluvně zavázáni k ochraně vašich dat a splňují požadavky GDPR.</p>
 

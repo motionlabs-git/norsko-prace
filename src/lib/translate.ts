@@ -18,11 +18,13 @@ export interface JobTranslations {
   contact_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
+  work_start: string | null;
+  work_end: string | null;
 }
 
-const SYSTEM_BASE = `You process Norwegian job ads for a Czech/Slovak job portal. For each job return a single JSON object. CRITICAL: output ONLY the raw JSON object — no markdown, no code fences, no backticks, no commentary. Start your response with { and end with }.
+const SYSTEM_BASE = `You process Norwegian job ads for a Czech/Slovak job portal. Return the result by calling the process_job tool.
 
-Required keys:
+Fields:
 - includes_accommodation: boolean — SET TRUE if the employer provides housing/accommodation as part of the offer. Look for: "losji", "bolig", "hybel", "overnatting inkludert", "innkvartering", "boplass", "husvære", "kost og losji", "vi tilbyr bolig", "bolig tilbys", "gratis bolig", "bolig er inkludert", "bolig på stedet", "firmahytte", "brakke". SET FALSE if accommodation is NOT mentioned or is only available for a fee without employer subsidy.
 - requires_norwegian: boolean — Decision rule:
   SET TRUE if Norwegian proficiency is explicitly required: "kreves norsk", "må beherske norsk", "norsk i tale og skrift", "flytende norsk", "gode norskkunnskaper", "kommunikasjon på norsk", "snakke norsk", "forstå norsk". Also TRUE if Norwegian is primary AND English is only a bonus joined by "og gjerne", "og helst", "og fortrinnsvis" (e.g. "norsk og gjerne engelsk" = Norwegian is required, English is a bonus).
@@ -37,7 +39,10 @@ Required keys:
   Format as clean HTML: <p> for paragraphs, <ul><li> for bullet lists (requirements, responsibilities, benefits), <strong> for section headings. No <h1>/<h2>.
   Avoid stiff phrases like "Je požadováno aby...", "Uchazeč musí být...", "Pozice zahrnuje...". Write engagingly.
   Strip ALL: contact names, emails, phone numbers, "kontakt:", "send CV to:", company name (provided as "Company"), all URLs.
-- description_sk: Same into Slovak with identical rules. Use Slovak informal address ("Hľadáme ťa", "Budeš mať na starosti", "Čo ti ponúkame").`;
+- description_sk: Same into Slovak with identical rules. Use Slovak informal address ("Hľadáme ťa", "Budeš mať na starosti", "Čo ti ponúkame").
+- work_start: when the job starts, YYYY-MM-DD, resolved relative to "Today" in the message. Explicit date → that date. Only a month ("fra oktober") → first day of its next occurrence. "snarest"/"straks"/ASAP/"etter avtale"/permanent position → Today. Season only: summer ("sommersesong", "sommerjobb") → June 1; winter ("vintersesong", "sesongen 2026/2027") → December 1 (next occurrence). null if the ad gives no hint at all.
+- work_end: when the job ends, YYYY-MM-DD. Only a month ("ut august", "til slutten av mai") → last day of that month. Summer season → August 31; winter season → April 30 of the following year. null for permanent/open-ended positions or when unknown.
+- Never invent dates: if the ad says nothing about timing, both work_start and work_end are null.`;
 
 const SYSTEM_WITH_CONTACT_EXTRACTION = SYSTEM_BASE + `
 - contact_name: full name of the contact person extracted from the description, or null
@@ -49,6 +54,37 @@ const SYSTEM_WITH_KNOWN_CONTACTS = SYSTEM_BASE + `
 - contact_email: null (contacts provided separately)
 - contact_phone: null (contacts provided separately)`;
 
+// Výsledek přes vynucený nástroj se strict schématem: SDK vrací už rozparsovaný objekt.
+// (Dřív volný JSON text — neescapované uvozovky v HTML popisu shazovaly ~5 % překladů.)
+const PROCESS_JOB_TOOL: Anthropic.Tool = {
+  name: "process_job",
+  description: "Uloží zpracovaný (přeložený) inzerát.",
+  strict: true,
+  input_schema: {
+    type: "object",
+    properties: {
+      title_cs: { type: "string" },
+      title_sk: { type: "string" },
+      description_cs: { type: "string" },
+      description_sk: { type: "string" },
+      requires_norwegian: { type: "boolean" },
+      includes_accommodation: { type: "boolean" },
+      contact_name: { type: ["string", "null"] },
+      contact_email: { type: ["string", "null"] },
+      contact_phone: { type: ["string", "null"] },
+      work_start: { type: ["string", "null"] },
+      work_end: { type: ["string", "null"] },
+    },
+    required: [
+      "title_cs", "title_sk", "description_cs", "description_sk",
+      "requires_norwegian", "includes_accommodation",
+      "contact_name", "contact_email", "contact_phone",
+      "work_start", "work_end",
+    ],
+    additionalProperties: false,
+  },
+};
+
 async function processJob(
   title: string,
   description: string,
@@ -57,7 +93,7 @@ async function processJob(
 ): Promise<JobTranslations> {
   const system = knownContacts ? SYSTEM_WITH_KNOWN_CONTACTS : SYSTEM_WITH_CONTACT_EXTRACTION;
 
-  let userContent = `Company: ${company}\nTitle: ${title}\n\nDescription: ${description}`;
+  let userContent = `Today: ${new Date().toISOString().slice(0, 10)}\nCompany: ${company}\nTitle: ${title}\n\nDescription: ${description}`;
   if (knownContacts) {
     const parts = [
       knownContacts.name,
@@ -71,27 +107,32 @@ async function processJob(
 
   const message = await client.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 4096,
+    max_tokens: 8192,
     system,
+    tools: [PROCESS_JOB_TOOL],
+    tool_choice: { type: "tool", name: "process_job" },
     messages: [{ role: "user", content: userContent }],
   });
 
-  const text = message.content[0].type === "text" ? message.content[0].text : "";
-
-  let result: JobTranslations;
-  try {
-    result = JSON.parse(text) as JobTranslations;
-  } catch {
-    const match = text.match(/\{[\s\S]*\}/);
-    if (match) result = JSON.parse(match[0]) as JobTranslations;
-    else throw new Error(`Claude response parse failed: ${text.slice(0, 200)}`);
+  const toolUse = message.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
+  // max_tokens = uříznutý výstup → neúplný překlad, radši selhat (translateBatch zkusí znovu)
+  if (!toolUse || message.stop_reason === "max_tokens") {
+    throw new Error(`Claude: chybí výsledek process_job (stop_reason ${message.stop_reason})`);
   }
+  const result = { ...(toolUse.input as JobTranslations) };
 
   // Regex fallback — strip any URLs Claude may have missed
   const stripUrls = (s: string | null) =>
     s ? s.replace(/https?:\/\/[^\s"'<>]+/gi, "").replace(/www\.[^\s"'<>]+/gi, "").trim() : s;
   result.description_cs = stripUrls(result.description_cs) ?? result.description_cs;
   result.description_sk = stripUrls(result.description_sk) ?? result.description_sk;
+
+  // Termín: jen platné YYYY-MM-DD; konec před začátkem = nesmysl → bez konce
+  const validDate = (d: string | null | undefined) =>
+    d && /^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(new Date(d).getTime()) ? d : null;
+  result.work_start = validDate(result.work_start);
+  result.work_end = validDate(result.work_end);
+  if (result.work_start && result.work_end && result.work_end < result.work_start) result.work_end = null;
 
   // If contacts came from NAV API, override whatever Claude returned
   if (knownContacts) {
@@ -173,33 +214,37 @@ function norwegianTextIncludesAccommodation(text: string): boolean {
 // Process up to CONCURRENCY jobs in parallel
 const CONCURRENCY = 8;
 
+const MAX_ATTEMPTS = 3;
+
+// null = překlad se nepodařil ani po opakování → volající inzerát NEUKLÁDÁ
+// (dřív se ukládal prázdný titulek/popis a requires_norwegian: false).
 export async function translateBatch(
   items: Array<{ title: string; description: string; company?: string; contactList?: Array<{ name?: string; email?: string; phone?: string }> }>
-): Promise<JobTranslations[]> {
+): Promise<(JobTranslations | null)[]> {
   if (items.length === 0) return [];
 
-  const results: JobTranslations[] = new Array(items.length);
-
-  const fallback: JobTranslations = {
-    title_cs: "", title_sk: "", description_cs: "", description_sk: "",
-    requires_norwegian: false, includes_accommodation: false,
-    contact_name: null, contact_email: null, contact_phone: null,
-  };
+  const results: (JobTranslations | null)[] = new Array(items.length).fill(null);
 
   for (let i = 0; i < items.length; i += CONCURRENCY) {
     const chunk = items.slice(i, i + CONCURRENCY);
     const chunkResults = await Promise.allSettled(
-      chunk.map((item) => {
+      chunk.map(async (item) => {
         const knownContacts = extractContactFromList(item.contactList);
-        return processJob(item.title, item.description, item.company ?? "", knownContacts);
+        for (let attempt = 1; ; attempt++) {
+          try {
+            return await processJob(item.title, item.description, item.company ?? "", knownContacts);
+          } catch (err) {
+            if (attempt >= MAX_ATTEMPTS) throw err;
+            await new Promise((r) => setTimeout(r, 2000 * attempt));
+          }
+        }
       })
     );
     chunkResults.forEach((r, j) => {
       if (r.status === "fulfilled") {
         results[i + j] = r.value;
       } else {
-        console.error("translateBatch item failed:", r.reason?.message ?? r.reason);
-        results[i + j] = fallback;
+        console.error(`translateBatch item failed (${MAX_ATTEMPTS}×):`, r.reason?.message ?? r.reason);
       }
     });
   }

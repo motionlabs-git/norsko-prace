@@ -112,6 +112,10 @@ export interface Job {
   // Optional — kdy skript naposledy vyhodnotil premium (NULL = ještě nehodnoceno).
   // Optional záměrně, aby nerozbil Omit<Job,...> v row-builderech (viz jobs.ts).
   premium_evaluated_at?: string | null;
+  // Termín práce vytažený z inzerátu (AI). work_start NULL = neuveden; work_end NULL = bez konce.
+  work_start?: string | null;
+  work_end?: string | null;
+  work_period_evaluated_at?: string | null;
   is_active: boolean;
   requires_norwegian: boolean;
   includes_accommodation: boolean;
@@ -142,6 +146,8 @@ export interface LocalizedJob {
   isFeatured: boolean;
   isPremium: boolean;
   includesAccommodation: boolean;
+  workStart: string | null;
+  workEnd: string | null;
   source: "nav" | "finn";
 }
 

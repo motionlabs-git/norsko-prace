@@ -54,12 +54,13 @@ export function Navbar({ user }: NavbarProps) {
         .toUpperCase()
     : (user?.email.slice(0, 2).toUpperCase() ?? "?");
 
-  const navLinks = [
+  const navLinks: { href: string; label: string; accent?: boolean }[] = [
     { href: "/prace", label: "Nabídky práce" },
     { href: "/vybrane", label: "Vybrané práce" },
     { href: "/ubytovani", label: "Ubytování" },
     { href: "/pruvodce", label: "Průvodce" },
     { href: "/blog", label: "Blog" },
+    { href: "/premium", label: "Premium", accent: true },
   ];
 
   return (
@@ -70,7 +71,7 @@ export function Navbar({ user }: NavbarProps) {
           <Link
             href="/"
             onClick={() => setMenuOpen(false)}
-            className="flex items-center relative z-50"
+            className="flex flex-shrink-0 items-center relative z-50"
           >
             <Image
               src="/images/norsko-prace-logo.svg"
@@ -82,18 +83,22 @@ export function Navbar({ user }: NavbarProps) {
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-6">
-            {navLinks.map(({ href, label }) => (
+          <nav className="hidden lg:flex items-center gap-5 xl:gap-7">
+            {navLinks.map(({ href, label, accent }) => (
               <Link
                 key={href}
                 href={href}
-                className={`text-sm font-medium transition-colors hover:text-[var(--color-primary)] ${
-                  isActive(href)
-                    ? "text-[var(--color-primary)]"
-                    : "text-[var(--color-text-muted)]"
-                }`}
+                className={
+                  accent
+                    ? "whitespace-nowrap text-sm font-bold text-[var(--color-primary)] transition-opacity hover:opacity-70"
+                    : `whitespace-nowrap text-sm font-medium transition-colors hover:text-[var(--color-primary)] ${
+                        isActive(href)
+                          ? "text-[var(--color-primary)]"
+                          : "text-[var(--color-text-muted)]"
+                      }`
+                }
               >
-                {label}
+                {accent ? `★ ${label}` : label}
               </Link>
             ))}
           </nav>
@@ -101,7 +106,7 @@ export function Navbar({ user }: NavbarProps) {
           {/* Right side */}
           <div className="flex items-center gap-2 sm:gap-3">
             {user ? (
-              <div className="relative hidden md:block" ref={dropdownRef}>
+              <div className="relative hidden lg:block" ref={dropdownRef}>
                 <button
                   onClick={() => setDropdownOpen((o) => !o)}
                   className="cursor-pointer flex items-center justify-center w-9 h-9 rounded-full bg-[var(--color-primary)] text-white text-xs font-bold transition hover:opacity-90"
@@ -155,7 +160,7 @@ export function Navbar({ user }: NavbarProps) {
             ) : (
               <Link
                 href="/auth/login"
-                className="cta-arrow hidden md:inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-5 py-2 text-sm font-bold text-white shadow-md transition hover:bg-[var(--color-primary-dark)] hover:shadow-lg"
+                className="cta-arrow hidden lg:inline-flex whitespace-nowrap items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-5 py-2 text-sm font-bold text-white shadow-md transition hover:bg-[var(--color-primary-dark)] hover:shadow-lg"
               >
                 Přihlásit se
               </Link>
@@ -163,7 +168,7 @@ export function Navbar({ user }: NavbarProps) {
 
             {/* Hamburger */}
             <button
-              className="flex md:hidden items-center justify-center w-9 h-9 rounded-full border border-[var(--color-border)] transition-colors hover:bg-[var(--color-border)] relative z-50"
+              className="flex lg:hidden items-center justify-center w-9 h-9 rounded-full border border-[var(--color-border)] transition-colors hover:bg-[var(--color-border)] relative z-50"
               onClick={() => setMenuOpen((o) => !o)}
               aria-label={menuOpen ? "Zavřít menu" : "Otevřít menu"}
             >
@@ -192,7 +197,7 @@ export function Navbar({ user }: NavbarProps) {
 
       {/* Mobile overlay */}
       <div
-        className="fixed inset-0 z-40 flex flex-col md:hidden"
+        className="fixed inset-0 z-40 flex flex-col lg:hidden"
         style={{
           background: "linear-gradient(135deg, #001849 0%, #003087 100%)",
           transition:

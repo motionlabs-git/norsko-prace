@@ -72,12 +72,20 @@ function openApplicationOr(): string {
   return `application_due_at.is.null,application_due_at.gte.${start.toISOString()}`;
 }
 
+// PostgREST `.or()` filtr: skryj inzeráty po datu vypršení (expires z NAV/Finn).
+// Pojistka nezávislá na syncu — i když sync neproběhne, prošlé se nezobrazí.
+// expires_at IS NULL (zdroj datum neuvádí) → zobrazit.
+function notExpiredOr(): string {
+  return `expires_at.is.null,expires_at.gt.${new Date().toISOString()}`;
+}
+
 export async function getRecentJobs(limit = 6): Promise<Job[]> {
   const db = await createServerSupabase();
   const { data, error } = await db
     .from("jobs")
     .select("*")
     .eq("is_active", true)
+    .or(notExpiredOr())
     .eq("source", "nav")
     .eq("requires_norwegian", false)
     .or(openApplicationOr())
@@ -97,6 +105,7 @@ export async function getFeaturedJobs(limit = 3): Promise<Job[]> {
     .from("jobs")
     .select("*")
     .eq("is_active", true)
+    .or(notExpiredOr())
     .eq("is_featured", true)
     .eq("source", "nav")
     .eq("requires_norwegian", false)
@@ -116,16 +125,37 @@ export async function getJobBySlug(slug: string): Promise<Job | null> {
     .select("*")
     .eq("slug", slug)
     .eq("is_active", true)
+    .or(notExpiredOr())
     .single();
 
   if (error || !data) return null;
   return data;
 }
 
+const DAY_MS = 86_400_000;
+const isoDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+
+// Hledaný výraz → slova normalizovaná stejně jako sloupec jobs.search_text
+// (malá písmena, bez diakritiky; ø/æ NFD nerozloží, řešíme ručně jako Postgres unaccent).
+export function searchTerms(search: string): string[] {
+  return search
+    .toLowerCase()
+    .replace(/ø/g, "o")
+    .replace(/æ/g, "ae")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[%_*\\,()"']/g, " ") // zástupné a řídicí znaky PostgRESTu
+    .split(/\s+/)
+    .filter((t) => t.length >= 2)
+    .slice(0, 5);
+}
+
 export async function getJobs({
   category,
   engagementType,
   city,
+  search,
+  period,
   norwegianOk = true,
   accommodation,
   page = 1,
@@ -134,38 +164,101 @@ export async function getJobs({
   category?: string;
   engagementType?: string;
   city?: string;
+  search?: string;
+  period?: { from: string; to: string; onlyKnown?: boolean };
   norwegianOk?: boolean;
   accommodation?: boolean;
   page?: number;
   pageSize?: number;
 }): Promise<{ jobs: Job[]; total: number }> {
   const db = await createServerSupabase();
-  let query = db
-    .from("jobs")
-    .select("*", { count: "exact" })
-    .eq("is_active", true)
-    .or(openApplicationOr())
-    .order("source", { ascending: false })
-    .order("published_at", { ascending: false });
-
-  if (category) query = query.eq("category_level1", category);
-  if (engagementType) query = query.ilike("engagement_type", engagementType);
-  if (city) query = query.eq("location_city", city);
-  if (!norwegianOk) query = query.eq("requires_norwegian", false);
-  if (accommodation) query = query.eq("includes_accommodation", true);
-
   const from = (page - 1) * pageSize;
-  query = query.range(from, from + pageSize - 1);
+  const to = from + pageSize - 1;
+  const terms = search ? searchTerms(search) : [];
 
-  const { data, error, count } = await query;
+  // Společné filtry bez řazení; volá se pro každý dotaz zvlášť (builder je jednorázový)
+  const base = (head = false) => {
+    let query = db
+      .from("jobs")
+      .select("*", { count: "exact", head })
+      .eq("is_active", true)
+      .or(notExpiredOr())
+      .or(openApplicationOr());
+    if (category) query = query.eq("category_level1", category);
+    if (engagementType) query = query.ilike("engagement_type", engagementType);
+    if (city) query = query.eq("location_city", city);
+    if (!norwegianOk) query = query.eq("requires_norwegian", false);
+    if (accommodation) query = query.eq("includes_accommodation", true);
+    return query;
+  };
+  type Q = ReturnType<typeof base>;
+  // Výchozí řazení až za primárním řazením úrovně (PostgREST řadí podle pořadí volání)
+  const ordered = (q: Q) =>
+    q.order("source", { ascending: false }).order("published_at", { ascending: false });
+  // Každé hledané slovo kdekoli v textu inzerátu (AND)
+  const inText = (q: Q) => terms.reduce((acc, t) => acc.ilike("search_text", `%${t}%`), q);
+
+  // Stránkování přes „úrovně" (filtr + vlastní primární řazení): nejdřív celá 1. úroveň, pak 2. …
+  // Úrovně se nesmí překrývat. null = dotaz selhal (např. chybí sloupec) → jednoduchý fallback.
+  const paginateTiers = async (tiers: ((q: Q) => Q)[]) => {
+    const counts = await Promise.all(tiers.map((tier) => tier(base(true))));
+    const failed = counts.find((c) => c.error);
+    if (failed) {
+      console.error("getJobs tiers:", failed.error?.message);
+      return null;
+    }
+    let offset = 0;
+    const parts: Q[] = [];
+    counts.forEach((c, i) => {
+      const n = c.count ?? 0;
+      const lo = Math.max(from, offset);
+      const hi = Math.min(to, offset + n - 1);
+      if (lo <= hi) parts.push(ordered(tiers[i](base())).range(lo - offset, hi - offset) as Q);
+      offset += n;
+    });
+    const results = await Promise.all(parts);
+    return { jobs: results.flatMap((r) => (r.data as Job[] | null) ?? []), total: offset };
+  };
+
+  let tiers: ((q: Q) => Q)[] | null = null;
+
+  if (period) {
+    // Termín pobytu [příjezd, odjezd] vs. termín práce, tolerance ±14 dní. Stejná množina jako
+    // „překrývá se" — jen seřazená podle toho, jak dobře sedí:
+    const a = new Date(period.from).getTime();
+    const b = new Date(period.to).getTime();
+    const arrivalTol = isoDay(a - 14 * DAY_MS);
+    const departureTol = isoDay(b + 14 * DAY_MS);
+    const openEndMin = isoDay(a - 60 * DAY_MS); // bez konce: nástup max 60 dní před příjezdem
+    tiers = [
+      // 1) začíná kolem příjezdu nebo během pobytu → podle nástupu
+      (q) => inText(q).gte("work_start", arrivalTol).lte("work_start", departureTol)
+        .order("work_start", { ascending: true }),
+      // 2) už běží a pokračuje i během pobytu → nejčerstvější nástup první
+      (q) => inText(q).lt("work_start", arrivalTol)
+        .or(`work_end.gte.${arrivalTol},and(work_end.is.null,work_start.gte.${openEndMin})`)
+        .order("work_start", { ascending: false }),
+      // 3) bez uvedeného termínu
+      ...(period.onlyKnown ? [] : [(q: Q) => inText(q).is("work_start", null)]),
+    ];
+  } else if (terms.length > 0) {
+    // Relevance hledání: 1) všechna slova v názvu/firmě/místě, 2) zbytek (slova jen v popisu)
+    tiers = [
+      (q) => terms.reduce((acc, t) => acc.ilike("search_title", `%${t}%`), q),
+      (q) => inText(q).or(terms.map((t) => `search_title.not.ilike.*${t}*`).join(",")),
+    ];
+  }
+
+  if (tiers) {
+    const tiered = await paginateTiers(tiers);
+    if (tiered) return tiered;
+  }
+
+  const { data, error, count } = await ordered(inText(base())).range(from, to);
   if (error) {
     // "Requested range not satisfiable" = page beyond available data
     if (error.code === "PGRST103" || error.message.includes("range not satisfiable")) {
-      const { count: total } = await db
-        .from("jobs")
-        .select("*", { count: "exact", head: true })
-        .eq("is_active", true)
-        .or(openApplicationOr());
+      const { count: total } = await base(true);
       return { jobs: [], total: total ?? 0 };
     }
     console.error("getJobs error:", error.message);
@@ -184,6 +277,7 @@ export async function getSimilarJobs(
     .from("jobs")
     .select("*")
     .eq("is_active", true)
+    .or(notExpiredOr())
     .neq("id", currentId)
     .or(openApplicationOr())
     .order("published_at", { ascending: false })
@@ -202,6 +296,7 @@ export async function getDistinctCities(): Promise<string[]> {
     .from("jobs")
     .select("location_city")
     .eq("is_active", true)
+    .or(notExpiredOr())
     .not("location_city", "is", null);
 
   if (error || !data) return [];
@@ -215,6 +310,7 @@ export async function getAllJobSlugs(): Promise<{ slug: string; updatedAt: strin
     .from("jobs")
     .select("slug, updated_at")
     .eq("is_active", true)
+    .or(notExpiredOr())
     .order("published_at", { ascending: false });
 
   if (error || !data) return [];
@@ -270,6 +366,8 @@ export function localizeJob(job: Job): LocalizedJob {
     isFeatured: job.is_featured,
     isPremium: job.is_premium,
     includesAccommodation: job.includes_accommodation,
+    workStart: job.work_start ?? null,
+    workEnd: job.work_end ?? null,
     source: (job.source ?? "nav") as "nav" | "finn",
   };
 }
@@ -284,6 +382,7 @@ export async function getPremiumJobs(): Promise<Job[]> {
     .from("jobs")
     .select("*")
     .eq("is_active", true)
+    .or(notExpiredOr())
     .eq("is_premium", true)
     .or(openApplicationOr())
     .order("published_at", { ascending: false });
@@ -319,7 +418,7 @@ export async function getUserFavoriteIds(userId: string): Promise<string[]> {
 
 export function vacancyToJobRow(
   vacancy: NavVacancy,
-  translations: { title_cs: string; title_sk: string; description_cs: string; description_sk: string; requires_norwegian?: boolean; includes_accommodation?: boolean; contact_name?: string | null; contact_email?: string | null; contact_phone?: string | null }
+  translations: { title_cs: string; title_sk: string; description_cs: string; description_sk: string; requires_norwegian?: boolean; includes_accommodation?: boolean; contact_name?: string | null; contact_email?: string | null; contact_phone?: string | null; work_start?: string | null; work_end?: string | null }
 ): Omit<Job, "id" | "created_at" | "updated_at"> {
   const v = vacancy.ad_content!;
   const loc = v.workLocations?.[0];
@@ -336,6 +435,9 @@ export function vacancyToJobRow(
     description_no: v.description,
     description_cs: translations.description_cs,
     description_sk: translations.description_sk,
+    work_start: translations.work_start ?? null,
+    work_end: translations.work_end ?? null,
+    work_period_evaluated_at: new Date().toISOString(),
     company: v.employer?.name ?? null,
     location_city: loc?.city ?? null,
     location_county: loc?.county ?? null,
@@ -402,7 +504,7 @@ export async function deactivateJobs(navIds: string[]): Promise<void> {
 
 export function finnJobToRow(
   job: FinnJob,
-  translations: { title_cs: string; title_sk: string; description_cs: string; description_sk: string; requires_norwegian?: boolean; includes_accommodation?: boolean; contact_name?: string | null; contact_email?: string | null; contact_phone?: string | null }
+  translations: { title_cs: string; title_sk: string; description_cs: string; description_sk: string; requires_norwegian?: boolean; includes_accommodation?: boolean; contact_name?: string | null; contact_email?: string | null; contact_phone?: string | null; work_start?: string | null; work_end?: string | null }
 ): Omit<Job, "id" | "created_at" | "updated_at"> {
   const slug =
     slugify(job.title).slice(0, 60) + "-finn-" + job.finnId;
@@ -425,6 +527,9 @@ export function finnJobToRow(
     description_no: job.description,
     description_cs: translations.description_cs,
     description_sk: translations.description_sk,
+    work_start: translations.work_start ?? null,
+    work_end: translations.work_end ?? null,
+    work_period_evaluated_at: new Date().toISOString(),
     company: job.company ?? null,
     location_city: job.locationCity ?? null,
     location_county: null,

@@ -5,10 +5,13 @@ import posthog from "posthog-js";
 export const AnalyticsEvent = {
   ApplyClick: "apply_click", // klik na přihlášení/kontakt (hlavní konverze)
   ContactPaywallView: "contact_paywall_view", // zobrazen paywall na kontakt
+  ContactUnlocked: "contact_unlocked", // odemčen kontakt z bezplatného limitu
+  ContactLimitReached: "contact_limit_reached", // pokus o odemčení po vyčerpání limitu
   UpgradeCtaClicked: "upgrade_cta_clicked", // klik na "Premium"/upgrade
   CheckoutStarted: "checkout_started",
   FavoriteAdded: "favorite_added",
   FilterUsed: "filter_used",
+  Search: "search", // hledání podle klíčových slov v přehledu
   Signup: "signup",
 } as const;
 

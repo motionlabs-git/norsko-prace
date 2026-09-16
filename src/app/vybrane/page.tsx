@@ -3,6 +3,7 @@ import { getPremiumJobs, localizeJob, getCategoryMeta, getUserFavoriteIds } from
 import { JobCard } from "@/components/jobs/JobCard";
 import { FavoriteButton } from "@/components/jobs/FavoriteButton";
 import { createClient } from "@/utils/supabase/server";
+import { getEntitlement, hasPremium } from "@/lib/entitlement";
 
 export const revalidate = 1800;
 
@@ -23,21 +24,22 @@ const FAKE_CARDS = [
 export default async function VybranePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const ent = await getEntitlement(user?.id);
+  const canSee = hasPremium(ent);
 
-  const [premiumJobs, favoriteIds] = user
-    ? await Promise.all([getPremiumJobs(), getUserFavoriteIds(user.id)])
-    : [[], []];
+  const premiumJobs = canSee ? await getPremiumJobs() : [];
+  const favoriteIds = user ? await getUserFavoriteIds(user.id) : [];
 
   const localized = premiumJobs.map((job) => ({
     job: localizeJob(job),
     meta: getCategoryMeta(job.category_level1),
   }));
 
-  const subtitleText = user
+  const subtitleText = canSee
     ? localized.length > 0
       ? `${localized.length} ručně vybraných pozic`
       : "Ručně vybrané pracovní příležitosti v Norsku"
-    : "Přihlas se a zobraz ručně vybrané příležitosti";
+    : "Odemkni ručně vybrané příležitosti s Premium";
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
@@ -54,7 +56,7 @@ export default async function VybranePage() {
 
       <section className="py-12">
         <div className="mx-auto max-w-6xl px-4 md:px-8">
-          {user ? (
+          {canSee ? (
             localized.length === 0 ? (
               <div className="py-24 text-center">
                 <p className="text-4xl mb-4">✦</p>
@@ -94,14 +96,16 @@ export default async function VybranePage() {
                 <div className="rounded-2xl bg-white/95 backdrop-blur-sm shadow-lg border border-[var(--color-border)] px-8 py-7 text-center max-w-xs">
                   <p className="text-3xl mb-3">🔒</p>
                   <h2 className="text-base font-extrabold text-[var(--color-text)] mb-2">Vybrané inzeráty</h2>
-                  <p className="text-sm text-[var(--color-text-muted)] mb-5">Přihlas se zdarma a zobraz ručně vybrané pracovní nabídky.</p>
+                  <p className="text-sm text-[var(--color-text-muted)] mb-5">Ručně vybrané a ověřené nabídky odemkneš s Premium.</p>
                   <div className="flex flex-col gap-2.5">
-                    <Link href="/auth/register" className="cta-arrow inline-flex items-center justify-center rounded-full bg-[var(--color-primary)] px-6 py-2.5 text-sm font-bold text-white hover:opacity-90 transition">
-                      Registrovat se zdarma
+                    <Link href="/premium" className="cta-arrow inline-flex items-center justify-center rounded-full bg-[var(--color-primary)] px-6 py-2.5 text-sm font-bold text-white hover:opacity-90 transition">
+                      Odemknout s Premium
                     </Link>
-                    <Link href="/auth/login" className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition">
-                      Už mám účet — přihlásit se
-                    </Link>
+                    {!user && (
+                      <Link href="/auth/login" className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition">
+                        Už mám předplatné — přihlásit se
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>

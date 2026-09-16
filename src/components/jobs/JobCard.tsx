@@ -23,7 +23,7 @@ function ChevronRight() {
   );
 }
 
-export function JobCard({ job, meta, headingLevel = "h3", favoriteButton }: JobItem & { headingLevel?: "h2" | "h3"; favoriteButton?: ReactNode }) {
+export function JobCard({ job, meta, headingLevel = "h3", favoriteButton, showMissingPeriod = false }: JobItem & { headingLevel?: "h2" | "h3"; favoriteButton?: ReactNode; showMissingPeriod?: boolean }) {
   const due = formatDue(job.applicationDueAt ?? job.applicationDue);
   const Heading = headingLevel;
   const appType = getApplicationType(job.applicationUrl ?? null);
@@ -55,6 +55,11 @@ export function JobCard({ job, meta, headingLevel = "h3", favoriteButton }: JobI
             {job.engagementType && (
               <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${meta.badgeClass}`}>
                 {job.engagementType}
+              </span>
+            )}
+            {showMissingPeriod && !job.workStart && (
+              <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-500">
+                Termín neuveden
               </span>
             )}
             {job.includesAccommodation && (

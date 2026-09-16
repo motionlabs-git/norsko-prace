@@ -138,24 +138,38 @@ export function isSeasonalJob(vacancy: NavVacancy): boolean {
 export async function iterateFeed(
   sinceDate: string | null,
   onBatch: (vacancies: NavVacancy[]) => Promise<void>,
-  onInactive: (navIds: string[]) => Promise<void>
-): Promise<{ processed: number; inactive: number; pages: number }> {
+  onInactive: (navIds: string[]) => Promise<void>,
+  opts: {
+    /** Po tomto čase (ms epoch) nezačínat další stránku — zbytek dojede příští běh. */
+    deadline?: number;
+    /** Po každé zpracované stránce: date_modified posledního záznamu = kurzor pro příští běh. */
+    onPageDone?: (cursor: string) => Promise<void>;
+  } = {}
+): Promise<{ processed: number; inactive: number; pages: number; complete: boolean }> {
   let nextUrl: string | null = null;
   let processed = 0;
   let inactive = 0;
   let pages = 0;
 
   do {
+    if (opts.deadline && Date.now() > opts.deadline) {
+      return { processed, inactive, pages, complete: false };
+    }
+
     const page = await fetchFeedPage(sinceDate, nextUrl);
 
     if (page.items.length === 0) break;
 
     pages++;
 
+    // Feed je changelog — stejný inzerát může být na stránce víckrát; platí poslední stav
+    const latest = new Map<string, NavFeedItem>();
+    for (const item of page.items) latest.set(item._feed_entry?.uuid ?? item.id, item);
+
     const activeItems: NavFeedItem[] = [];
     const inactiveIds: string[] = [];
 
-    for (const item of page.items) {
+    for (const item of latest.values()) {
       if (item._feed_entry?.status === "INACTIVE") {
         inactiveIds.push(item._feed_entry.uuid);
       } else {
@@ -177,8 +191,13 @@ export async function iterateFeed(
         details.push(...results);
       }
 
+      // Prošlé inzeráty vůbec nepřekládat (šetří čas i API) — v DB by je stejně hned deaktivoval sync
+      const now = Date.now();
       const seasonal = details.filter(
-        (v): v is NavVacancy => v !== null && isSeasonalJob(v)
+        (v): v is NavVacancy =>
+          v !== null &&
+          isSeasonalJob(v) &&
+          !(v.ad_content?.expires && new Date(v.ad_content.expires).getTime() < now)
       );
 
       if (seasonal.length > 0) {
@@ -187,8 +206,14 @@ export async function iterateFeed(
       }
     }
 
+    const cursor = page.items.reduce(
+      (max, it) => (it.date_modified > max ? it.date_modified : max),
+      page.items[0].date_modified
+    );
+    await opts.onPageDone?.(new Date(cursor).toISOString());
+
     nextUrl = page.next_url;
   } while (nextUrl !== null);
 
-  return { processed, inactive, pages };
+  return { processed, inactive, pages, complete: true };
 }

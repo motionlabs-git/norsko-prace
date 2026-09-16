@@ -13,6 +13,7 @@ let initialized = false;
 
 export function PostHogProvider({ children, user }: { children: React.ReactNode; user: PHUser }) {
   const [consent, setConsent] = useState<Consent>("unset");
+  const [checked, setChecked] = useState(false); // localStorage ověřen? (brání probliknutí banneru)
 
   // Inicializace PostHogu (jednou) + načtení uloženého souhlasu.
   // opt_out_capturing_by_default = nic se neodesílá, dokud uživatel nesouhlasí.
@@ -32,6 +33,7 @@ export function PostHogProvider({ children, user }: { children: React.ReactNode;
     }
     const saved = localStorage.getItem("ph_consent");
     setConsent(saved === "granted" || saved === "denied" ? saved : "unset");
+    setChecked(true);
   }, []);
 
   // Aplikace souhlasu + identifikace přihlášeného uživatele.
@@ -56,7 +58,7 @@ export function PostHogProvider({ children, user }: { children: React.ReactNode;
         <PostHogPageview />
       </Suspense>
       {children}
-      {consent === "unset" && <ConsentBanner onChoice={handleChoice} />}
+      {checked && consent === "unset" && <ConsentBanner onChoice={handleChoice} />}
     </PHProvider>
   );
 }

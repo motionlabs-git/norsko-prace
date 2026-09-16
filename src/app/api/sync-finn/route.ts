@@ -37,7 +37,8 @@ export async function GET(request: NextRequest) {
       );
 
       const rows = finnJobs
-        .map((j, i) => finnJobToRow(j, translations[i]))
+        // nepřeložené neukládat (prázdný inzerát na webu)
+        .flatMap((j, i) => (translations[i] ? [finnJobToRow(j, translations[i])] : []))
         .filter((r) => !r.requires_norwegian && !hasBlockedTitle(r.title_no ?? ""));
 
       upserted += await upsertJobs(rows);

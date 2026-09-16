@@ -6,6 +6,8 @@ import { getApplicationType } from "@/lib/application-utils";
 import { SimilarJobsSlider } from "@/components/jobs/SimilarJobsSlider";
 import { FavoriteButton } from "@/components/jobs/FavoriteButton";
 import { createClient } from "@/utils/supabase/server";
+import { getEntitlement, getContactAccess, FREE_CONTACT_LIMIT } from "@/lib/entitlement";
+import { AutoUnlockContact, ContactLimitReached } from "@/components/premium/AutoUnlockContact";
 
 export const revalidate = 3600;
 
@@ -44,6 +46,11 @@ export default async function JobDetailPage({ params }: Props) {
   const { data: { user } } = await supabase.auth.getUser();
   const favoriteIds = user ? await getUserFavoriteIds(user.id) : [];
   const isFavorited = favoriteIds.includes(job.id);
+
+  const ent = await getEntitlement(user?.id);
+  const access = await getContactAccess(user?.id, ent, job.id);
+  const canSeeContact = access.canSee;
+  const hasContactInfo = Boolean(job.contact_name || job.contact_email || job.contact_phone);
 
   const similarRaw = await getSimilarJobs(job.id, job.category_level1);
   const similarItems = similarRaw.map(j => ({ job: localizeJob(j), meta: getCategoryMeta(j.category_level1) }));
@@ -87,7 +94,7 @@ export default async function JobDetailPage({ params }: Props) {
             employmentType: job.engagement_type ?? "",
             datePosted: job.published_at ?? "",
             validThrough: job.expires_at ?? "",
-            url: localized.applicationUrl ?? localized.sourceUrl ?? "",
+            url: `https://norsko-prace.cz/prace/${slug}`,
           }),
         }}
       />
@@ -134,29 +141,72 @@ export default async function JobDetailPage({ params }: Props) {
             </div>
 
             <div className="space-y-4">
-              {localized.applicationUrl && (
-                <div className="space-y-2">
-                  <a href={localized.applicationUrl} target="_blank" rel="noopener noreferrer" className="cta-arrow block w-full rounded-full bg-[var(--color-primary)] py-3.5 text-center text-sm font-bold text-white transition hover:bg-[var(--color-primary-dark)]">
-                    Přihlásit se
-                  </a>
-                  {appType === "portal" && (
-                    <p className="text-center text-xs text-[var(--color-text-muted)]">Přihláška přes pracovní portál</p>
+              {canSeeContact ? (
+                <>
+                  {localized.applicationUrl && (
+                    <div className="space-y-2">
+                      <a href={localized.applicationUrl} target="_blank" rel="noopener noreferrer" className="cta-arrow block w-full rounded-full bg-[var(--color-primary)] py-3.5 text-center text-sm font-bold text-white transition hover:bg-[var(--color-primary-dark)]">
+                        Přihlásit se
+                      </a>
+                      {appType === "portal" && (
+                        <p className="text-center text-xs text-[var(--color-text-muted)]">Přihláška přes pracovní portál</p>
+                      )}
+                    </div>
                   )}
-                </div>
-              )}
 
-              {user && <FavoriteButton jobId={job.id} initialFavorited={isFavorited} variant="detail" />}
+                  {access.unlocked && (
+                    <p className="text-center text-xs text-[var(--color-text-muted)]">
+                      Odemčeno zdarma · zbývá {access.remaining} z {FREE_CONTACT_LIMIT}{" "}
+                      <Link href="/premium" className="font-semibold text-[var(--color-primary)] hover:underline">
+                        Bez limitu s Premium
+                      </Link>
+                    </p>
+                  )}
 
-              {(job.contact_name || job.contact_email || job.contact_phone) && (
-                <div className="rounded-2xl bg-white p-5 shadow-[var(--shadow-sm)]">
-                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-[var(--color-text-muted)]">Kontakt</h3>
-                  {job.contact_name && <p className="mb-2 text-sm font-semibold text-[var(--color-text)]">{job.contact_name}</p>}
-                  {job.contact_email && <a href={`mailto:${job.contact_email}`} className="block text-sm text-[var(--color-primary)] hover:underline">{job.contact_email}</a>}
-                  {job.contact_phone && (() => {
-                    const { display, tel } = formatPhone(job.contact_phone);
-                    return <a href={`tel:${tel}`} className="mt-1 block text-sm text-[var(--color-primary)] hover:underline">{display}</a>;
-                  })()}
-                </div>
+                  {user && <FavoriteButton jobId={job.id} initialFavorited={isFavorited} variant="detail" />}
+
+                  {hasContactInfo && (
+                    <div className="rounded-2xl bg-white p-5 shadow-[var(--shadow-sm)]">
+                      <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-[var(--color-text-muted)]">Kontakt</h3>
+                      {job.contact_name && <p className="mb-2 text-sm font-semibold text-[var(--color-text)]">{job.contact_name}</p>}
+                      {job.contact_email && <a href={`mailto:${job.contact_email}`} className="block text-sm text-[var(--color-primary)] hover:underline">{job.contact_email}</a>}
+                      {job.contact_phone && (() => {
+                        const { display, tel } = formatPhone(job.contact_phone);
+                        return <a href={`tel:${tel}`} className="mt-1 block text-sm text-[var(--color-primary)] hover:underline">{display}</a>;
+                      })()}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {user && <FavoriteButton jobId={job.id} initialFavorited={isFavorited} variant="detail" />}
+
+                  <div className="rounded-2xl border border-[var(--color-primary)] bg-white p-6 text-center shadow-[var(--shadow-sm)]">
+                    <h3 className="mb-3 text-base font-extrabold text-[var(--color-text)]">Kontakt a přihlášení</h3>
+                    {user ? (
+                      access.remaining > 0 ? (
+                        <AutoUnlockContact jobId={job.id} limit={FREE_CONTACT_LIMIT} />
+                      ) : (
+                        <ContactLimitReached jobId={job.id} limit={FREE_CONTACT_LIMIT} />
+                      )
+                    ) : (
+                      <>
+                        <p className="mb-2 text-2xl">🔒</p>
+                        <p className="mb-4 text-sm text-[var(--color-text-muted)]">
+                          Zaregistruj se zdarma a uvidíš kontakt u prvních {FREE_CONTACT_LIMIT} nabídek,
+                          které otevřeš. Vyzkoušíš si, jak to funguje, než se rozhodneš pro Premium.
+                        </p>
+                        <Link href="/auth/register" className="cta-arrow inline-flex items-center rounded-full bg-[var(--color-primary)] px-6 py-2.5 text-sm font-bold text-white transition hover:opacity-90">
+                          Zaregistrovat se zdarma
+                        </Link>
+                        <p className="mt-3 text-xs text-[var(--color-text-muted)]">
+                          Už máš účet?{" "}
+                          <Link href={`/auth/login?next=/prace/${slug}`} className="font-semibold text-[var(--color-primary)] hover:underline">Přihlas se</Link>
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </>
               )}
 
               <div className="rounded-2xl bg-white p-5 shadow-[var(--shadow-sm)]">
