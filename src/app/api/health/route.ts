@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { stripe } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,10 +32,24 @@ export async function GET(request: NextRequest) {
   }
 
   const key = process.env.STRIPE_SECRET_KEY ?? "";
+  const priceId = process.env.STRIPE_PRICE_FOUNDING ?? "";
+
+  // Cena musí existovat ve stejném režimu jako klíč — nejčastější chyba při přechodu na ostrý provoz
+  let price: Record<string, unknown> = { id: priceId || null, ok: false, error: "nenastaveno" };
+  if (key && priceId) {
+    try {
+      const p = await stripe.prices.retrieve(priceId);
+      price = { id: p.id, ok: p.active, livemode: p.livemode, currency: p.currency, amount: p.unit_amount };
+    } catch (err) {
+      price = { id: priceId, ok: false, error: err instanceof Error ? err.message.slice(0, 120) : "chyba" };
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     commit: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null,
     env: Object.fromEntries(KEYS.map((k) => [k, Boolean(process.env[k])])),
     stripeMode: key.startsWith("sk_live") ? "live" : key.startsWith("sk_test") ? "test" : null,
+    price,
   });
 }
