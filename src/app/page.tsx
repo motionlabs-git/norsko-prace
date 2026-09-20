@@ -44,10 +44,7 @@ export default async function HomePage() {
 
 function HeroSection() {
   return (
-    <section
-      className="relative flex flex-col justify-end overflow-hidden"
-      style={{ height: "calc(100vh - 4rem)" }}
-    >
+    <section className="relative flex flex-col justify-end overflow-hidden min-h-[calc(100svh-4rem)] md:h-[calc(100vh-4rem)]">
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: "url('/images/hero.jpg')" }}
@@ -60,15 +57,15 @@ function HeroSection() {
         }}
       />
 
-      <div className="relative mx-auto w-full max-w-6xl px-6 pb-20 pt-40 md:px-8 md:pb-24">
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 backdrop-blur-sm border border-white/20">
+      <div className="relative mx-auto w-full max-w-6xl px-6 pb-14 pt-20 sm:pb-20 sm:pt-40 md:px-8 md:pb-24">
+        <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 backdrop-blur-sm border border-white/20 sm:mb-6">
           <span className="h-1.5 w-1.5 rounded-full bg-[#C8102E]" />
           <span className="text-xs font-semibold uppercase tracking-widest text-white/90">
             Sezónní práce v Norsku
           </span>
         </div>
 
-        <h1 className="mb-6 text-5xl font-extrabold leading-[1.05] tracking-tight text-white md:text-7xl lg:text-8xl">
+        <h1 className="mb-5 text-[2.6rem] font-extrabold leading-[1.05] tracking-tight text-white sm:mb-6 sm:text-5xl md:text-7xl lg:text-8xl">
           Najdi práci
           <br />
           <span className="relative inline-block">
@@ -79,7 +76,7 @@ function HeroSection() {
           <span className="text-white/70">na tohle léto</span>
         </h1>
 
-        <p className="mb-10 max-w-xl text-lg leading-relaxed text-white/70">
+        <p className="mb-8 max-w-xl text-base leading-relaxed text-white/70 sm:mb-10 sm:text-lg">
           Stovky sezónních nabídek přeložených do češtiny — aktualizováno každý den.
         </p>
 
@@ -98,7 +95,7 @@ function HeroSection() {
           </a>
         </div>
 
-        <div className="mt-12 flex flex-wrap gap-6 border-t border-white/15 pt-8">
+        <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 border-t border-white/15 pt-6 sm:mt-12 sm:pt-8">
           {[
             { num: "200+", label: "aktivních inzerátů" },
             { num: "Denně", label: "aktualizováno" },
