@@ -57,7 +57,7 @@ export function Navbar({ user }: NavbarProps) {
   const navLinks: { href: string; label: string; accent?: boolean }[] = [
     { href: "/prace", label: "Sezónní práce" },
     { href: "/stale-pozice", label: "Stálé pozice" },
-    { href: "/vybrane", label: "Vybrané" },
+    { href: "/vybrane", label: "Vybrané inzeráty" },
     { href: "/ubytovani", label: "Ubytování" },
     { href: "/pruvodce", label: "Průvodce" },
     { href: "/blog", label: "Blog" },
@@ -84,7 +84,7 @@ export function Navbar({ user }: NavbarProps) {
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden lg:flex items-center gap-5 xl:gap-7">
+          <nav className="hidden lg:flex items-center gap-4 xl:gap-6">
             {navLinks.map(({ href, label, accent }) => (
               <Link
                 key={href}

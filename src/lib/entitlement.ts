@@ -56,7 +56,7 @@ export function hasPremiumPlus(e: Entitlement): boolean {
 }
 
 /** Kolik kontaktů si může přihlášený neplatící uživatel zdarma odemknout. */
-export const FREE_CONTACT_LIMIT = 10;
+export const FREE_CONTACT_LIMIT = 5;
 
 export interface ContactAccess {
   canSee: boolean; // kontakt tohoto inzerátu je vidět (Premium nebo odemčeno zdarma)

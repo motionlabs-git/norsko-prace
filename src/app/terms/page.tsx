@@ -58,7 +58,7 @@ export default function TermsPage() {
               Základní obsah webu (inzeráty včetně popisu pozice, blog, průvodce) je zdarma. Předplatné
               <strong> Founding Premium</strong> odemyká kontaktní údaje zaměstnavatele a odkaz na přihlášení
               u všech inzerátů a sekci „Vybrané práce“. Registrovaný uživatel bez předplatného uvidí kontakt
-              a odkaz na přihlášení zdarma u prvních 10 inzerátů, jejichž detail otevře; otevřením detailu
+              a odkaz na přihlášení zdarma u prvních 5 inzerátů, jejichž detail otevře; otevřením detailu
               se jeden z těchto kontaktů čerpá. Opakované otevření téhož inzerátu limit znovu nečerpá.
             </p>
             <ul>

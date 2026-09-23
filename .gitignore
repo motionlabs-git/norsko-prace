@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+email-preview.*
+public/email-*.html
+public/emaily.html

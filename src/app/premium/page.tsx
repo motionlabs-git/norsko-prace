@@ -55,7 +55,7 @@ export default async function PremiumPage() {
             vybrané ověřené nabídky a nástroje, které ti sezónu v Norsku výrazně usnadní.
           </p>
           <p className="mx-auto mt-4 max-w-xl text-sm font-semibold text-white/85">
-            Nejsi si jistý? Po registraci uvidíš zdarma kontakt u prvních 10 nabídek, které otevřeš.
+            Nejsi si jistý? Po registraci uvidíš zdarma kontakt u prvních 5 nabídek, které otevřeš.
           </p>
         </div>
       </section>
