@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getAllJobSlugs } from "@/lib/jobs";
+import { TRADES } from "@/lib/trades";
 import { getBlogPosts } from "@/lib/blog";
 
 export const revalidate = 3600;
@@ -9,6 +10,7 @@ const BASE = "https://norsko-prace.cz";
 const staticPages = [
   { path: "", priority: 1.0, changeFrequency: "daily" as const },
   { path: "/prace", priority: 0.9, changeFrequency: "daily" as const },
+  { path: "/stale-pozice", priority: 0.9, changeFrequency: "daily" as const },
   { path: "/ubytovani", priority: 0.7, changeFrequency: "monthly" as const },
   { path: "/vybrane", priority: 0.5, changeFrequency: "weekly" as const },
   { path: "/blog", priority: 0.6, changeFrequency: "weekly" as const },
@@ -43,5 +45,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticEntries, ...jobEntries, ...blogEntries];
+  const tradeEntries: MetadataRoute.Sitemap = TRADES.map((t) => ({
+    url: `${BASE}/stale-pozice/${t.slug}`,
+    lastModified: now,
+    changeFrequency: "daily" as const,
+    priority: 0.8,
+  }));
+
+  return [...staticEntries, ...tradeEntries, ...jobEntries, ...blogEntries];
 }

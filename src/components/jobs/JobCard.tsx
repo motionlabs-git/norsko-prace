@@ -62,6 +62,11 @@ export function JobCard({ job, meta, headingLevel = "h3", favoriteButton, showMi
                 Termín neuveden
               </span>
             )}
+            {job.requiresNorwegian && (
+              <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700">
+                Nutná norština
+              </span>
+            )}
             {job.includesAccommodation && (
               <span className="rounded-full bg-sky-50 px-2.5 py-0.5 text-xs font-semibold text-sky-700">
                 🏠 S ubytováním

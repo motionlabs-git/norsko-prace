@@ -55,8 +55,9 @@ export function Navbar({ user }: NavbarProps) {
     : (user?.email.slice(0, 2).toUpperCase() ?? "?");
 
   const navLinks: { href: string; label: string; accent?: boolean }[] = [
-    { href: "/prace", label: "Nabídky práce" },
-    { href: "/vybrane", label: "Vybrané práce" },
+    { href: "/prace", label: "Sezónní práce" },
+    { href: "/stale-pozice", label: "Stálé pozice" },
+    { href: "/vybrane", label: "Vybrané" },
     { href: "/ubytovani", label: "Ubytování" },
     { href: "/pruvodce", label: "Průvodce" },
     { href: "/blog", label: "Blog" },

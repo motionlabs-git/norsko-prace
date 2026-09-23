@@ -6,7 +6,7 @@ import { track, AnalyticsEvent } from "@/lib/analytics";
 
 // Vyhledávání podle klíčových slov. Stav drží URL (?q=…), takže jde sdílet a funguje zpět/vpřed;
 // ostatní filtry zůstávají zachované.
-export function JobSearch({ initialQuery = "" }: { initialQuery?: string }) {
+export function JobSearch({ initialQuery = "", placeholder = "Kuchař, sklad, Tromsø, ubytování…" }: { initialQuery?: string; placeholder?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -40,7 +40,7 @@ export function JobSearch({ initialQuery = "" }: { initialQuery?: string }) {
         type="search"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="Kuchař, sklad, Tromsø, ubytování…"
+        placeholder={placeholder}
         aria-label="Hledat v nabídkách"
         maxLength={80}
         className="min-w-0 flex-1 bg-transparent py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none [&::-webkit-search-cancel-button]:hidden"

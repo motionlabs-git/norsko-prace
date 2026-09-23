@@ -158,6 +158,9 @@ export async function getJobs({
   period,
   norwegianOk = true,
   accommodation,
+  jobType,
+  trade,
+  extent,
   page = 1,
   pageSize = 20,
 }: {
@@ -168,6 +171,12 @@ export async function getJobs({
   period?: { from: string; to: string; onlyKnown?: boolean };
   norwegianOk?: boolean;
   accommodation?: boolean;
+  /** Větev inzerátů: sezónní (/prace) nebo stálé pozice (/stale-pozice) */
+  jobType?: "seasonal" | "permanent";
+  /** Obor stálé pozice (elektrikar, svarec, …) */
+  trade?: string;
+  /** Heltid / Deltid */
+  extent?: string;
   page?: number;
   pageSize?: number;
 }): Promise<{ jobs: Job[]; total: number }> {
@@ -189,6 +198,9 @@ export async function getJobs({
     if (city) query = query.eq("location_city", city);
     if (!norwegianOk) query = query.eq("requires_norwegian", false);
     if (accommodation) query = query.eq("includes_accommodation", true);
+    if (jobType) query = query.eq("job_type", jobType);
+    if (trade) query = query.eq("trade", trade);
+    if (extent) query = query.eq("extent", extent);
     return query;
   };
   type Q = ReturnType<typeof base>;
@@ -290,14 +302,16 @@ export async function getSimilarJobs(
   return data ?? [];
 }
 
-export async function getDistinctCities(): Promise<string[]> {
+export async function getDistinctCities(jobType?: "seasonal" | "permanent"): Promise<string[]> {
   const db = await createServerSupabase();
-  const { data, error } = await db
+  let query = db
     .from("jobs")
     .select("location_city")
     .eq("is_active", true)
     .or(notExpiredOr())
     .not("location_city", "is", null);
+  if (jobType) query = query.eq("job_type", jobType);
+  const { data, error } = await query;
 
   if (error || !data) return [];
   const unique = [...new Set(data.map((r) => r.location_city as string))];
@@ -326,6 +340,8 @@ const ENGAGEMENT_TYPE: Record<string, string> = {
   Fast:        "Trvalý",
   Feriejobb:   "Brigáda",
   Prosjekt:    "Projekt",
+  Engasjement: "Dlouhodobá smlouva",
+  "Åremål":    "Smlouva na dobu určitou",
 };
 
 const EXTENT: Record<string, string> = {
@@ -366,8 +382,11 @@ export function localizeJob(job: Job): LocalizedJob {
     isFeatured: job.is_featured,
     isPremium: job.is_premium,
     includesAccommodation: job.includes_accommodation,
+    requiresNorwegian: job.requires_norwegian,
     workStart: job.work_start ?? null,
     workEnd: job.work_end ?? null,
+    jobType: job.job_type ?? "seasonal",
+    trade: job.trade ?? null,
     source: (job.source ?? "nav") as "nav" | "finn",
   };
 }
@@ -418,7 +437,8 @@ export async function getUserFavoriteIds(userId: string): Promise<string[]> {
 
 export function vacancyToJobRow(
   vacancy: NavVacancy,
-  translations: { title_cs: string; title_sk: string; description_cs: string; description_sk: string; requires_norwegian?: boolean; includes_accommodation?: boolean; contact_name?: string | null; contact_email?: string | null; contact_phone?: string | null; work_start?: string | null; work_end?: string | null }
+  translations: { title_cs: string; title_sk: string; description_cs: string; description_sk: string; requires_norwegian?: boolean; includes_accommodation?: boolean; contact_name?: string | null; contact_email?: string | null; contact_phone?: string | null; work_start?: string | null; work_end?: string | null },
+  classification: { jobType?: "seasonal" | "permanent"; trade?: string | null } = {}
 ): Omit<Job, "id" | "created_at" | "updated_at"> {
   const v = vacancy.ad_content!;
   const loc = v.workLocations?.[0];
@@ -457,6 +477,8 @@ export function vacancyToJobRow(
     is_featured: false,
     is_premium: false,
     is_active: vacancy.status === "ACTIVE",
+    job_type: classification.jobType ?? "seasonal",
+    trade: classification.trade ?? null,
     requires_norwegian: translations.requires_norwegian ?? false,
     includes_accommodation: translations.includes_accommodation ?? false,
     contact_name: translations.contact_name ?? null,
@@ -549,6 +571,8 @@ export function finnJobToRow(
     is_featured: false,
     is_premium: false,
     is_active: true,
+    job_type: "seasonal",
+    trade: null,
     requires_norwegian: translations.requires_norwegian ?? false,
     includes_accommodation: translations.includes_accommodation ?? false,
     contact_name: translations.contact_name ?? null,
@@ -567,4 +591,88 @@ function slugify(text: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
+}
+
+// ── Stálé pozice ─────────────────────────────────────────────────────────────
+
+/** Počet aktivních stálých nabídek po oborech — dlaždice na /stale-pozice. */
+export async function getTradeCounts(): Promise<Record<string, number>> {
+  const db = await createServerSupabase();
+  const { data, error } = await db
+    .from("jobs")
+    .select("trade")
+    .eq("is_active", true)
+    .eq("job_type", "permanent")
+    .or(notExpiredOr())
+    .or(openApplicationOr())
+    .not("trade", "is", null);
+
+  if (error || !data) return {};
+  const counts: Record<string, number> = {};
+  for (const row of data) {
+    const t = row.trade as string;
+    counts[t] = (counts[t] ?? 0) + 1;
+  }
+  return counts;
+}
+
+/**
+ * Rozdělí inzeráty z feedu na ty, které je potřeba přeložit, a ty beze změny.
+ *
+ * NAV posílá inzerát znovu při jakékoli úpravě (často jen prodloužení lhůty).
+ * Bez tohoto kroku bychom platili překlad pokaždé znovu — u stálých pozic,
+ * kde je objem několikanásobný, jde o většinu nákladů.
+ */
+export async function splitUnchangedVacancies(
+  vacancies: NavVacancy[]
+): Promise<{ changed: NavVacancy[]; unchanged: NavVacancy[] }> {
+  if (vacancies.length === 0) return { changed: [], unchanged: [] };
+  const db = supabaseAdmin();
+  const { data, error } = await db
+    .from("jobs")
+    .select("nav_id, description_no")
+    .eq("source", "nav")
+    .in("nav_id", vacancies.map((v) => v.uuid));
+
+  if (error || !data) return { changed: vacancies, unchanged: [] };
+
+  const known = new Map(data.map((r) => [r.nav_id as string, (r.description_no ?? "") as string]));
+  const changed: NavVacancy[] = [];
+  const unchanged: NavVacancy[] = [];
+  for (const v of vacancies) {
+    const stored = known.get(v.uuid);
+    if (stored !== undefined && stored === (v.ad_content?.description ?? "")) unchanged.push(v);
+    else changed.push(v);
+  }
+  return { changed, unchanged };
+}
+
+/** Levná aktualizace inzerátů beze změny textu — jen lhůty, platnost a stav. */
+export async function refreshJobMeta(vacancies: NavVacancy[]): Promise<number> {
+  if (vacancies.length === 0) return 0;
+  const db = supabaseAdmin();
+  let updated = 0;
+  const CHUNK = 10;
+  for (let i = 0; i < vacancies.length; i += CHUNK) {
+    const chunk = vacancies.slice(i, i + CHUNK);
+    await Promise.all(
+      chunk.map(async (v) => {
+        const ad = v.ad_content;
+        if (!ad) return;
+        const { error } = await db
+          .from("jobs")
+          .update({
+            expires_at: ad.expires ?? null,
+            application_due: ad.applicationDue ?? null,
+            application_due_at: parseApplicationDue(ad.applicationDue),
+            published_at: ad.published ?? null,
+            is_active: v.status !== "INACTIVE",
+          })
+          .eq("source", "nav")
+          .eq("nav_id", v.uuid);
+        if (!error) updated++;
+      })
+    );
+  }
+  return updated;
 }

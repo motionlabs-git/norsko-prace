@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
     const { data } = await db
       .from("sync_log")
       .select("synced_at")
+      .eq("kind", "seasonal")
       .order("synced_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -74,6 +75,7 @@ export async function GET(request: NextRequest) {
   const { data: logRow } = await db
     .from("sync_log")
     .insert({
+      kind: "seasonal",
       synced_at: cursor,
       pages: 0,
       processed: 0,

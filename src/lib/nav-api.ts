@@ -11,8 +11,10 @@ import {
   ALLOWED_OCCUPATION_CATEGORIES,
   BLOCKED_OCCUPATION_CATEGORIES,
   SEASONAL_ENGAGEMENT_TYPES,
+  PERMANENT_ENGAGEMENT_TYPES,
   hasBlockedTitle,
 } from "./job-filter";
+import { tradeForCategories, type TradeSlug } from "./trades";
 
 const FEED_BASE_URL = "https://pam-stilling-feed.nav.no";
 
@@ -135,6 +137,49 @@ export function isSeasonalJob(vacancy: NavVacancy): boolean {
   return inAllowedCategory;
 }
 
+/**
+ * Základní vhodnost inzerátu bez ohledu na typ úvazku:
+ * musí být v Norsku, mimo blokované kategorie a bez blokovaného slova v titulu.
+ */
+function passesBaseChecks(vacancy: NavVacancy): boolean {
+  const ad = vacancy.ad_content;
+  if (!ad) return false;
+
+  const locations = ad.workLocations ?? [];
+  const isInNorway =
+    locations.length === 0 ||
+    locations.some(
+      (l) => !l.country || l.country.toUpperCase() === "NORGE" || l.country.toUpperCase() === "NORWAY"
+    );
+  if (!isInNorway) return false;
+
+  const blocked = (ad.occupationCategories ?? []).some(
+    (cat) =>
+      BLOCKED_OCCUPATION_CATEGORIES.has(cat.level1) ||
+      BLOCKED_OCCUPATION_CATEGORIES.has(cat.level2 ?? "")
+  );
+  if (blocked) return false;
+
+  return !hasBlockedTitle(ad.title ?? "");
+}
+
+/**
+ * Obor stálé pozice, nebo null když inzerát do „Stálých pozic" nepatří.
+ *
+ * Na rozdíl od sezónních tu NEfiltrujeme požadavek na norštinu — u stálých řemesel
+ * je běžný a inzerát se místo vyhození označí štítkem (rozhodnutí uživatele).
+ */
+export function permanentTradeOf(vacancy: NavVacancy): TradeSlug | null {
+  if (!passesBaseChecks(vacancy)) return null;
+  const ad = vacancy.ad_content!;
+
+  const engagement = (ad.engagementtype ?? "").toLowerCase();
+  const isPermanent = [...PERMANENT_ENGAGEMENT_TYPES].some((t) => engagement === t.toLowerCase());
+  if (!isPermanent) return null;
+
+  return tradeForCategories(ad.occupationCategories);
+}
+
 export async function iterateFeed(
   sinceDate: string | null,
   onBatch: (vacancies: NavVacancy[]) => Promise<void>,
@@ -144,6 +189,8 @@ export async function iterateFeed(
     deadline?: number;
     /** Po každé zpracované stránce: date_modified posledního záznamu = kurzor pro příští běh. */
     onPageDone?: (cursor: string) => Promise<void>;
+    /** Které inzeráty brát; výchozí je sezónní filtr. */
+    accept?: (vacancy: NavVacancy) => boolean;
   } = {}
 ): Promise<{ processed: number; inactive: number; pages: number; complete: boolean }> {
   let nextUrl: string | null = null;
@@ -193,16 +240,17 @@ export async function iterateFeed(
 
       // Prošlé inzeráty vůbec nepřekládat (šetří čas i API) — v DB by je stejně hned deaktivoval sync
       const now = Date.now();
-      const seasonal = details.filter(
+      const accept = opts.accept ?? isSeasonalJob;
+      const matching = details.filter(
         (v): v is NavVacancy =>
           v !== null &&
-          isSeasonalJob(v) &&
+          accept(v) &&
           !(v.ad_content?.expires && new Date(v.ad_content.expires).getTime() < now)
       );
 
-      if (seasonal.length > 0) {
-        await onBatch(seasonal);
-        processed += seasonal.length;
+      if (matching.length > 0) {
+        await onBatch(matching);
+        processed += matching.length;
       }
     }
 

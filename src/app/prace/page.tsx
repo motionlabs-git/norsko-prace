@@ -4,51 +4,12 @@ import { JobFilters } from "@/components/jobs/JobFilters";
 import { JobSearch } from "@/components/jobs/JobSearch";
 import { WorkPeriodPicker } from "@/components/jobs/WorkPeriodPicker";
 import { JobCard } from "@/components/jobs/JobCard";
+import { Pagination } from "@/components/jobs/Pagination";
 import { FavoriteButton } from "@/components/jobs/FavoriteButton";
 import { createClient } from "@/utils/supabase/server";
 import { getEntitlement, hasPremium } from "@/lib/entitlement";
 
 export const revalidate = 1800;
-
-function getPaginationRange(current: number, total: number): (number | null)[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const left = Math.max(2, current - 2);
-  const right = Math.min(total - 1, current + 2);
-  const range: (number | null)[] = [1];
-  if (left > 2) range.push(null);
-  for (let i = left; i <= right; i++) range.push(i);
-  if (right < total - 1) range.push(null);
-  range.push(total);
-  return range;
-}
-
-function Pagination({ page, totalPages, buildHref }: { page: number; totalPages: number; buildHref: (p: number) => string }) {
-  const range = getPaginationRange(page, totalPages);
-  const btnBase = "flex h-9 min-w-9 items-center justify-center rounded-full px-3 text-sm font-semibold transition-colors";
-  return (
-    <div className="mt-12 flex items-center justify-center gap-1.5">
-      {page > 1 ? (
-        <Link href={buildHref(page - 1)} className={`${btnBase} border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-primary-light)] hover:text-[var(--color-primary)]`} aria-label="Předchozí stránka">←</Link>
-      ) : (
-        <span className={`${btnBase} border border-[var(--color-border)] text-[var(--color-border)] cursor-not-allowed`}>←</span>
-      )}
-      {range.map((p, i) =>
-        p === null ? (
-          <span key={`e-${i}`} className="flex h-9 w-9 items-center justify-center text-sm text-[var(--color-text-muted)]">…</span>
-        ) : p === page ? (
-          <span key={p} className={`${btnBase} bg-[var(--color-primary)] text-white cursor-default`}>{p}</span>
-        ) : (
-          <Link key={p} href={buildHref(p)} className={`${btnBase} border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-primary-light)] hover:text-[var(--color-primary)]`}>{p}</Link>
-        )
-      )}
-      {page < totalPages ? (
-        <Link href={buildHref(page + 1)} className={`${btnBase} border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-primary-light)] hover:text-[var(--color-primary)]`} aria-label="Další stránka">→</Link>
-      ) : (
-        <span className={`${btnBase} border border-[var(--color-border)] text-[var(--color-border)] cursor-not-allowed`}>→</span>
-      )}
-    </div>
-  );
-}
 
 function buildQueryString(params: { category: string; engagementType: string; city: string; search: string; accommodation: boolean; period?: { from: string; to: string; onlyKnown?: boolean }; page: number }) {
   const q = new URLSearchParams();
@@ -73,7 +34,7 @@ interface Props {
 
 export async function generateMetadata({ searchParams }: Props) {
   const { q, od } = await searchParams;
-  const { total } = await getJobs({ pageSize: 1 });
+  const { total } = await getJobs({ jobType: "seasonal", pageSize: 1 });
   return {
     title: `Pracovní nabídky v Norsku | ${total} sezónních pozic`,
     description: `Procházej ${total} aktuálních sezónních pracovních nabídek v Norsku přeložených do češtiny.`,
@@ -107,8 +68,8 @@ export default async function PracePage({ searchParams }: Props) {
   const canSeePremium = hasPremium(ent);
 
   const [{ jobs, total }, cities, premiumJobs, favoriteIds] = await Promise.all([
-    getJobs({ category: category || undefined, engagementType: engagementType || undefined, city: city || undefined, search: search || undefined, period, norwegianOk: false, accommodation: accommodation || undefined, page, pageSize: PAGE_SIZE }),
-    getDistinctCities(),
+    getJobs({ jobType: "seasonal", category: category || undefined, engagementType: engagementType || undefined, city: city || undefined, search: search || undefined, period, norwegianOk: false, accommodation: accommodation || undefined, page, pageSize: PAGE_SIZE }),
+    getDistinctCities("seasonal"),
     getPremiumJobs(),
     user ? getUserFavoriteIds(user.id) : Promise.resolve([]),
   ]);

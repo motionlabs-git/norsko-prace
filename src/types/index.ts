@@ -117,6 +117,11 @@ export interface Job {
   work_end?: string | null;
   work_period_evaluated_at?: string | null;
   is_active: boolean;
+  // Větev syncu, která inzerát přinesla: sezónní výpis /prace vs. /stale-pozice.
+  // Optional záměrně (stejně jako premium_evaluated_at) kvůli Omit<Job,…> v row-builderech.
+  job_type?: "seasonal" | "permanent";
+  // Obor stálé pozice (elektrikar, svarec, …); NULL u sezónních.
+  trade?: string | null;
   requires_norwegian: boolean;
   includes_accommodation: boolean;
   contact_name: string | null;
@@ -146,8 +151,11 @@ export interface LocalizedJob {
   isFeatured: boolean;
   isPremium: boolean;
   includesAccommodation: boolean;
+  requiresNorwegian: boolean;
   workStart: string | null;
   workEnd: string | null;
+  jobType: "seasonal" | "permanent";
+  trade: string | null;
   source: "nav" | "finn";
 }
 
