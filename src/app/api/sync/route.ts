@@ -17,6 +17,20 @@ const PREMIUM_BUDGET_MS = 240_000;
 // Nedokončený běh proto spustí navazující (od uloženého kurzoru), nejvýš tolikrát:
 const MAX_HOPS = 20;
 
+/**
+ * Spustí navazující běh (od uloženého kurzoru) a čeká jen na přijetí požadavku —
+ * ne na jeho dokončení, jinak by tento běh přesáhl limit funkce.
+ * Vrací false, když je vyčerpaný počet navázání.
+ */
+async function chainNext(request: NextRequest, hop: number): Promise<boolean> {
+  if (hop >= MAX_HOPS) return false;
+  await fetch(`${request.nextUrl.origin}/api/sync?hop=${hop + 1}`, {
+    headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
+    signal: AbortSignal.timeout(3000),
+  }).catch(() => {}); // přerušení po 3 s je očekávané
+  return true;
+}
+
 export async function GET(request: NextRequest) {
   // Vercel Cron sends: Authorization: Bearer <CRON_SECRET>
   // Manual calls can use: x-cron-secret header or ?secret= query param
@@ -164,9 +178,11 @@ export async function GET(request: NextRequest) {
     const message = err instanceof Error ? err.message : String(err);
     const cause = err instanceof Error && (err as NodeJS.ErrnoException).cause;
     console.error("NAV sync error:", message, cause ?? "");
-    // Postup do poslední dokončené stránky je uložený; příští běh naváže
+    // Chyba feedu bývá přechodná. Bez navazujícího běhu by se čekalo na další
+    // týdenní cron a kurzor by zůstal stát — proto se pokračuje i po chybě.
+    const retried = await chainNext(request, hop);
     return NextResponse.json(
-      { error: message, cause: String(cause ?? ""), pages, cursor, deactivatedExpired: totalExpired },
+      { error: message, cause: String(cause ?? ""), pages, cursor, deactivatedExpired: totalExpired, retried },
       { status: 500 }
     );
   }
@@ -174,13 +190,10 @@ export async function GET(request: NextRequest) {
   // Nedočteno → navazující běh. Čekáme jen na přijetí požadavku (ne na jeho dokončení),
   // jinak by tento běh přesáhl limit; navazující běh pokračuje od uloženého kurzoru.
   let chained = false;
-  if (!complete && hop < MAX_HOPS) {
-    chained = true;
-    await fetch(`${request.nextUrl.origin}/api/sync?hop=${hop + 1}`, {
-      headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
-      signal: AbortSignal.timeout(3000),
-    }).catch(() => {}); // timeout abortu je očekávaný
-  } else if (!complete) {
+  if (!complete) {
+    chained = await chainNext(request, hop);
+  }
+  if (!complete && !chained) {
     console.error(`NAV sync: ani po ${MAX_HOPS} navazujících bězích feed nedočten (kurzor ${cursor})`);
   }
 

@@ -19,6 +19,16 @@ const FEED_BUDGET_MS = 180_000;
 const MAX_HOPS = 20;
 const KIND = "permanent";
 
+/** Navazující běh; čeká jen na přijetí požadavku. False = vyčerpaný počet navázání. */
+async function chainNext(request: NextRequest, hop: number): Promise<boolean> {
+  if (hop >= MAX_HOPS) return false;
+  await fetch(`${request.nextUrl.origin}/api/sync-permanent?hop=${hop + 1}`, {
+    headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
+    signal: AbortSignal.timeout(3000),
+  }).catch(() => {});
+  return true;
+}
+
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
   const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
@@ -167,20 +177,19 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("NAV sync (stálé pozice) error:", message);
+    // I po chybě pokračovat — jinak kurzor stojí až do dalšího týdenního cronu
+    const retried = await chainNext(request, hop);
     return NextResponse.json(
-      { error: message, pages, cursor, deactivatedExpired: totalExpired },
+      { error: message, pages, cursor, deactivatedExpired: totalExpired, retried },
       { status: 500 }
     );
   }
 
   let chained = false;
-  if (!complete && hop < MAX_HOPS) {
-    chained = true;
-    await fetch(`${request.nextUrl.origin}/api/sync-permanent?hop=${hop + 1}`, {
-      headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
-      signal: AbortSignal.timeout(3000),
-    }).catch(() => {});
-  } else if (!complete) {
+  if (!complete) {
+    chained = await chainNext(request, hop);
+  }
+  if (!complete && !chained) {
     console.error(`NAV sync (stálé pozice): feed nedočten ani po ${MAX_HOPS} bězích (kurzor ${cursor})`);
   }
 
