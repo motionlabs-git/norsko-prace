@@ -2,19 +2,23 @@ import Link from "next/link";
 import { getJobs, getPremiumJobs, getUserFavoriteIds, localizeJob, getCategoryMeta, CATEGORY_MAP, getDistinctCities } from "@/lib/jobs";
 import { JobFilters } from "@/components/jobs/JobFilters";
 import { JobSearch } from "@/components/jobs/JobSearch";
+import { SeasonSwitch } from "@/components/jobs/SeasonSwitch";
 import { WorkPeriodPicker } from "@/components/jobs/WorkPeriodPicker";
 import { JobCard } from "@/components/jobs/JobCard";
 import { Pagination } from "@/components/jobs/Pagination";
 import { FavoriteButton } from "@/components/jobs/FavoriteButton";
 import { createClient } from "@/utils/supabase/server";
 import { getEntitlement, hasPremium } from "@/lib/entitlement";
+import { offeredSeasons, seasonRange, seasonLabel, getSeason } from "@/lib/seasons";
 
 export const revalidate = 1800;
 
-function buildQueryString(params: { category: string; engagementType: string; city: string; search: string; accommodation: boolean; period?: { from: string; to: string; onlyKnown?: boolean }; page: number }) {
+function buildQueryString(params: { category: string; engagementType: string; city: string; search: string; accommodation: boolean; period?: { from: string; to: string; onlyKnown?: boolean }; season?: string; page: number }) {
   const q = new URLSearchParams();
   if (params.search) q.set("q", params.search);
-  if (params.period) {
+  // Sezóna nahrazuje ruční termín — v odkazu vede jen jedna z nich
+  if (params.season) q.set("sezona", params.season);
+  else if (params.period) {
     q.set("od", params.period.from);
     q.set("do", params.period.to);
     if (params.period.onlyKnown) q.set("termin", "1");
@@ -29,7 +33,7 @@ function buildQueryString(params: { category: string; engagementType: string; ci
 }
 
 interface Props {
-  searchParams: Promise<{ category?: string; type?: string; city?: string; page?: string; ubytovani?: string; q?: string; od?: string; do?: string; termin?: string }>;
+  searchParams: Promise<{ category?: string; type?: string; city?: string; page?: string; ubytovani?: string; q?: string; od?: string; do?: string; termin?: string; sezona?: string }>;
 }
 
 export async function generateMetadata({ searchParams }: Props) {
@@ -45,6 +49,13 @@ export async function generateMetadata({ searchParams }: Props) {
 
 const PAGE_SIZE = 20;
 
+// Datum čteme v pomocné funkci, ne v těle komponenty (pravidlo react-hooks/purity)
+function startOfToday(): Date {
+  const d = new Date();
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
+}
+
 export default async function PracePage({ searchParams }: Props) {
   const filters = await searchParams;
   const category = filters.category ?? "";
@@ -58,7 +69,14 @@ export default async function PracePage({ searchParams }: Props) {
   let periodTo = periodFrom && DATE_RE.test(filters.do ?? "") ? filters.do! : periodFrom;
   if (periodTo < periodFrom) [periodFrom, periodTo] = [periodTo, periodFrom];
   const onlyKnownPeriod = filters.termin === "1";
-  const period = periodFrom ? { from: periodFrom, to: periodTo, onlyKnown: onlyKnownPeriod } : undefined;
+  // Sezóna = pojmenovaný rozsah dat nad stejným filtrem; má přednost před ručním termínem
+  const season = getSeason(filters.sezona);
+  const seasonPeriod = season ? seasonRange(season.key, startOfToday()) : null;
+  const period = seasonPeriod
+    ? { from: seasonPeriod.from, to: seasonPeriod.to, onlyKnown: true }
+    : periodFrom
+      ? { from: periodFrom, to: periodTo, onlyKnown: onlyKnownPeriod }
+      : undefined;
   const fmtDay = (d: string) => new Date(d).toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric" });
   const page = Math.max(1, parseInt(filters.page ?? "1", 10));
 
@@ -67,11 +85,27 @@ export default async function PracePage({ searchParams }: Props) {
   const ent = await getEntitlement(user?.id);
   const canSeePremium = hasPremium(ent);
 
-  const [{ jobs, total }, cities, premiumJobs, favoriteIds] = await Promise.all([
+  const today = startOfToday();
+  const seasons = offeredSeasons(today);
+
+  const [{ jobs, total }, cities, premiumJobs, favoriteIds, seasonCounts] = await Promise.all([
     getJobs({ jobType: "seasonal", category: category || undefined, engagementType: engagementType || undefined, city: city || undefined, search: search || undefined, period, norwegianOk: false, accommodation: accommodation || undefined, page, pageSize: PAGE_SIZE }),
     getDistinctCities("seasonal"),
     getPremiumJobs(),
     user ? getUserFavoriteIds(user.id) : Promise.resolve([]),
+    // Počty u tlačítek: stejný filtr jako výpis, jen bez ostatních voleb
+    Promise.all(
+      seasons.map(async (sn) => {
+        const r = seasonRange(sn.key, today);
+        const { total: n } = await getJobs({
+          jobType: "seasonal",
+          period: { from: r.from, to: r.to, onlyKnown: true },
+          norwegianOk: false,
+          pageSize: 1,
+        });
+        return { key: sn.key, label: seasonLabel(sn, today), icon: sn.icon, monthsLabel: sn.monthsLabel, count: n };
+      })
+    ),
   ]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
@@ -94,6 +128,11 @@ export default async function PracePage({ searchParams }: Props) {
           <div className="mt-7">
             <JobSearch key={search} initialQuery={search} />
           </div>
+          {seasonCounts.length > 0 && (
+            <div className="mt-5">
+              <SeasonSwitch seasons={seasonCounts} active={season?.key ?? null} />
+            </div>
+          )}
         </div>
       </section>
 
@@ -136,14 +175,14 @@ export default async function PracePage({ searchParams }: Props) {
               {search && (
                 <p className="mt-1 text-sm text-[var(--color-text-muted)]">Zkus jiné nebo obecnější slovo, případně zruš filtry.</p>
               )}
-              {(category || engagementType || city || accommodation || search || period) && (
+              {(category || engagementType || city || accommodation || search || period || season) && (
                 <Link href="/prace" className="mt-4 inline-block text-sm font-semibold text-[var(--color-primary)] hover:underline">Zrušit filtry →</Link>
               )}
             </div>
           )}
 
           {totalPages > 1 && (
-            <Pagination page={page} totalPages={totalPages} buildHref={(p) => buildQueryString({ category, engagementType, city, search, accommodation, period, page: p })} />
+            <Pagination page={page} totalPages={totalPages} buildHref={(p) => buildQueryString({ category, engagementType, city, search, accommodation, period, season: season?.key, page: p })} />
           )}
         </div>
       </section>
