@@ -19,13 +19,31 @@ const FEED_BUDGET_MS = 180_000;
 const MAX_HOPS = 20;
 const KIND = "permanent";
 
-/** Navazující běh; čeká jen na přijetí požadavku. False = vyčerpaný počet navázání. */
+/** Veřejná adresa pro navázání — origin z Vercel Cronu na ni nemusí ukazovat. */
+function selfBase(request: NextRequest): string {
+  const configured = process.env.CRON_BASE_URL;
+  if (configured) return configured.replace(/\/$/, "");
+  const prod = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  if (prod) return `https://${prod}`;
+  return request.nextUrl.origin;
+}
+
+/** Navazující běh; čeká jen na přijetí požadavku. False = nerozjel se nebo vyčerpaná navázání. */
 async function chainNext(request: NextRequest, hop: number): Promise<boolean> {
   if (hop >= MAX_HOPS) return false;
-  await fetch(`${request.nextUrl.origin}/api/sync-permanent?hop=${hop + 1}`, {
-    headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
-    signal: AbortSignal.timeout(3000),
-  }).catch(() => {});
+  const url = `${selfBase(request)}/api/sync-permanent?hop=${hop + 1}`;
+  try {
+    await fetch(url, {
+      headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
+      signal: AbortSignal.timeout(3000),
+    });
+  } catch (err) {
+    const name = err instanceof Error ? err.name : "";
+    if (name !== "TimeoutError" && name !== "AbortError") {
+      console.error(`navazující běh se nepodařilo spustit (${url}):`, err);
+      return false;
+    }
+  }
   return true;
 }
 

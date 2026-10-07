@@ -18,16 +18,42 @@ const PREMIUM_BUDGET_MS = 240_000;
 const MAX_HOPS = 20;
 
 /**
+ * Adresa, na kterou se volá navazující běh.
+ *
+ * Nelze spoléhat na origin požadavku: při volání z Vercel Cronu nemusí ukazovat
+ * na veřejnou adresu, fetch pak tiše selže a kurzor zůstane stát (to byla příčina,
+ * proč týdenní cron dojel vždy jen dvě tři stránky a dál se nic nedělo).
+ */
+function selfBase(request: NextRequest): string {
+  const configured = process.env.CRON_BASE_URL;
+  if (configured) return configured.replace(/\/$/, "");
+  const prod = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  if (prod) return `https://${prod}`;
+  return request.nextUrl.origin;
+}
+
+/**
  * Spustí navazující běh (od uloženého kurzoru) a čeká jen na přijetí požadavku —
  * ne na jeho dokončení, jinak by tento běh přesáhl limit funkce.
  * Vrací false, když je vyčerpaný počet navázání.
  */
 async function chainNext(request: NextRequest, hop: number): Promise<boolean> {
   if (hop >= MAX_HOPS) return false;
-  await fetch(`${request.nextUrl.origin}/api/sync?hop=${hop + 1}`, {
-    headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
-    signal: AbortSignal.timeout(3000),
-  }).catch(() => {}); // přerušení po 3 s je očekávané
+  const url = `${selfBase(request)}/api/sync?hop=${hop + 1}`;
+  try {
+    await fetch(url, {
+      headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
+      signal: AbortSignal.timeout(3000),
+    });
+  } catch (err) {
+    // Přerušení po 3 s je očekávané — běh pokračuje na druhé straně.
+    // Cokoli jiného znamená, že se navazující běh nerozjel, a musí být v logu.
+    const name = err instanceof Error ? err.name : "";
+    if (name !== "TimeoutError" && name !== "AbortError") {
+      console.error(`navazující běh se nepodařilo spustit (${url}):`, err);
+      return false;
+    }
+  }
   return true;
 }
 
