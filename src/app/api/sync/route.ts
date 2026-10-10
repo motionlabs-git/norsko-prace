@@ -16,6 +16,8 @@ const PREMIUM_BUDGET_MS = 240_000;
 // Cron běží jednou týdně; týden změn (~12 stránek feedu) se do jednoho běhu nevejde.
 // Nedokončený běh proto spustí navazující (od uloženého kurzoru), nejvýš tolikrát:
 const MAX_HOPS = 20;
+// Po chybě (typicky výpadek NAV) stačí pár pokusů — dvacet jen zasype log prázdnými běhy
+const ERROR_MAX_HOPS = 3;
 
 /**
  * Adresa, na kterou se volá navazující běh.
@@ -37,8 +39,8 @@ function selfBase(request: NextRequest): string {
  * ne na jeho dokončení, jinak by tento běh přesáhl limit funkce.
  * Vrací false, když je vyčerpaný počet navázání.
  */
-async function chainNext(request: NextRequest, hop: number): Promise<boolean> {
-  if (hop >= MAX_HOPS) return false;
+async function chainNext(request: NextRequest, hop: number, maxHops = MAX_HOPS): Promise<boolean> {
+  if (hop >= maxHops) return false;
   const url = `${selfBase(request)}/api/sync?hop=${hop + 1}`;
   try {
     await fetch(url, {
@@ -206,7 +208,7 @@ export async function GET(request: NextRequest) {
     console.error("NAV sync error:", message, cause ?? "");
     // Chyba feedu bývá přechodná. Bez navazujícího běhu by se čekalo na další
     // týdenní cron a kurzor by zůstal stát — proto se pokračuje i po chybě.
-    const retried = await chainNext(request, hop);
+    const retried = await chainNext(request, hop, ERROR_MAX_HOPS);
     return NextResponse.json(
       { error: message, cause: String(cause ?? ""), pages, cursor, deactivatedExpired: totalExpired, retried },
       { status: 500 }

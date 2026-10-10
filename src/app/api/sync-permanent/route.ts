@@ -17,6 +17,8 @@ export const maxDuration = 300;
 // u řemesel nepral o čas se sezónními inzeráty a šel vypnout nezávisle.
 const FEED_BUDGET_MS = 180_000;
 const MAX_HOPS = 20;
+// Po chybě (typicky výpadek NAV) stačí pár pokusů — dvacet jen zasype log prázdnými běhy
+const ERROR_MAX_HOPS = 3;
 const KIND = "permanent";
 
 /** Veřejná adresa pro navázání — origin z Vercel Cronu na ni nemusí ukazovat. */
@@ -29,8 +31,8 @@ function selfBase(request: NextRequest): string {
 }
 
 /** Navazující běh; čeká jen na přijetí požadavku. False = nerozjel se nebo vyčerpaná navázání. */
-async function chainNext(request: NextRequest, hop: number): Promise<boolean> {
-  if (hop >= MAX_HOPS) return false;
+async function chainNext(request: NextRequest, hop: number, maxHops = MAX_HOPS): Promise<boolean> {
+  if (hop >= maxHops) return false;
   const url = `${selfBase(request)}/api/sync-permanent?hop=${hop + 1}`;
   try {
     await fetch(url, {
@@ -196,7 +198,7 @@ export async function GET(request: NextRequest) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("NAV sync (stálé pozice) error:", message);
     // I po chybě pokračovat — jinak kurzor stojí až do dalšího týdenního cronu
-    const retried = await chainNext(request, hop);
+    const retried = await chainNext(request, hop, ERROR_MAX_HOPS);
     return NextResponse.json(
       { error: message, pages, cursor, deactivatedExpired: totalExpired, retried },
       { status: 500 }

@@ -28,13 +28,28 @@ async function getPublicToken(): Promise<string> {
     return cachedToken;
   }
 
-  const res = await fetch(`${FEED_BASE_URL}/api/publicToken`, {
-    headers: { Accept: "text/plain" },
-    cache: "no-store",
-  });
+  // Tenhle endpoint NAV je pomalý (běžně 25 s) a občas vrátí 500. Jeden neúspěch
+  // dřív shodil celý běh ještě před prvním řádkem feedu — proto tři pokusy s prodlevou.
+  let res: Response | null = null;
+  let lastStatus = 0;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const r = await fetch(`${FEED_BASE_URL}/api/publicToken`, {
+        headers: { Accept: "text/plain" },
+        cache: "no-store",
+        signal: AbortSignal.timeout(45_000),
+      });
+      if (r.ok) { res = r; break; }
+      lastStatus = r.status;
+    } catch (err) {
+      lastStatus = 0;
+      console.warn(`NAV token: pokus ${attempt} selhal (${err instanceof Error ? err.name : "chyba"})`);
+    }
+    if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 3000));
+  }
 
-  if (!res.ok) {
-    throw new Error(`NAV: failed to get public token (${res.status})`);
+  if (!res) {
+    throw new Error(`NAV: failed to get public token (${lastStatus || "timeout"})`);
   }
 
   const raw = await res.text();
@@ -60,14 +75,28 @@ export async function fetchFeedPage(
     headers["If-Modified-Since"] = new Date(sinceDate).toUTCString();
   }
 
-  const res = await fetch(url, { headers, cache: "no-store" });
+  // Feed NAV je nespolehlivý: část dotazů končí 500 nebo vyprší, zbytek projde.
+  // Jediné selhání dřív shodilo celý běh, proto tři pokusy s krátkou prodlevou.
+  let res: Response | null = null;
+  let lastError = "";
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const r = await fetch(url, { headers, cache: "no-store", signal: AbortSignal.timeout(45_000) });
+      if (r.status === 304 || r.ok) { res = r; break; }
+      lastError = `${r.status} ${r.statusText}`;
+    } catch (err) {
+      lastError = err instanceof Error ? err.name : "chyba";
+    }
+    console.warn(`NAV feed: pokus ${attempt} selhal (${lastError})`);
+    if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 2500));
+  }
+
+  if (!res) {
+    throw new Error(`NAV feed fetch failed: ${lastError}`);
+  }
 
   if (res.status === 304) {
     return { version: "", title: "", feed_url: url, next_url: null, next_id: null, items: [] };
-  }
-
-  if (!res.ok) {
-    throw new Error(`NAV feed fetch failed: ${res.status} ${res.statusText}`);
   }
 
   return res.json();
