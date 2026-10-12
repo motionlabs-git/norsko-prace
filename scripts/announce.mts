@@ -24,46 +24,111 @@ const { announcementEmail, sendEmail } = await import("@/lib/email");
 
 const SITE = "https://norsko-prace.cz";
 
-// ── Obsah rozesílky ──────────────────────────────────────────────────────────
+// ── Obsah rozesílek ──────────────────────────────────────────────────────────
 // Píšeme z pohledu čtenáře: co s tím může udělat, ne co jsme naprogramovali.
-const ANNOUNCEMENT: Announcement = {
-  subject: "Novinka: stálé pozice v Norsku pro řemeslníky",
-  headline: "Nově i práce na stálo",
-  intro:
-    "Dosud jsi u nás našel jen sezónní nabídky. Od teď přidáváme i trvalé úvazky pro řemeslníky — a rovnou několik dalších věcí, které hledání usnadní.",
-  items: [
-    {
-      title: "Stálé pozice",
-      text:
-        "Elektrikáři, svářeči, mechanici, instalatéři a řidiči. Trvalý úvazek, každý obor má vlastní stránku a u nabídek je vidět, jestli zaměstnavatel vyžaduje norštinu.",
-      href: `${SITE}/stale-pozice`,
-      hrefLabel: "Prohlédnout stálé pozice",
-    },
-    {
-      title: "Vyhledávání podle klíčových slov",
-      text:
-        "Napiš „kuchař“, „sklad“ nebo třeba „Tromsø“ a uvidíš jen nabídky, které sedí. Funguje i bez diakritiky.",
-      href: `${SITE}/prace`,
-      hrefLabel: "Zkusit hledání",
-    },
-    {
-      title: "Filtr podle termínu",
-      text:
-        "Zadáš, odkdy dokdy chceš v Norsku být, a my vybereme nabídky, které se do tvého termínu vejdou.",
-    },
-    {
-      title: "Jen aktuální nabídky",
-      text:
-        "Pročistili jsme databázi a zrychlili napojení na norský úřad práce. Inzeráty po lhůtě už se nezobrazují.",
-    },
-  ],
-  ctaLabel: "Prohlédnout nabídky →",
-  ctaUrl: `${SITE}/prace`,
-  outro:
-    "Chybí ti nějaký obor nebo něco nefunguje, jak by mělo? Odepiš na tento e-mail — čteme každou zprávu.",
-  // U rozesílky Resend nahradí za odkaz konkrétního příjemce
-  unsubscribeUrl: "{{{RESEND_UNSUBSCRIBE_URL}}}",
-};
+// Novou rozesílku přidej jako další položku a přepni ACTIVE níž.
+
+const ANNOUNCEMENTS = {
+  "stale-pozice": {
+    subject: "Novinka: stálé pozice v Norsku pro řemeslníky",
+    headline: "Nově i práce na stálo",
+    intro:
+      "Dosud jsi u nás našel jen sezónní nabídky. Od teď přidáváme i trvalé úvazky pro řemeslníky — a rovnou několik dalších věcí, které hledání usnadní.",
+    items: [
+      {
+        title: "Stálé pozice",
+        text:
+          "Elektrikáři, svářeči, mechanici, instalatéři a řidiči. Trvalý úvazek, každý obor má vlastní stránku a u nabídek je vidět, jestli zaměstnavatel vyžaduje norštinu.",
+        href: `${SITE}/stale-pozice`,
+        hrefLabel: "Prohlédnout stálé pozice",
+      },
+      {
+        title: "Vyhledávání podle klíčových slov",
+        text:
+          "Napiš „kuchař“, „sklad“ nebo třeba „Tromsø“ a uvidíš jen nabídky, které sedí. Funguje i bez diakritiky.",
+        href: `${SITE}/prace`,
+        hrefLabel: "Zkusit hledání",
+      },
+      {
+        title: "Filtr podle termínu",
+        text:
+          "Zadáš, odkdy dokdy chceš v Norsku být, a my vybereme nabídky, které se do tvého termínu vejdou.",
+      },
+      {
+        title: "Jen aktuální nabídky",
+        text:
+          "Pročistili jsme databázi a zrychlili napojení na norský úřad práce. Inzeráty po lhůtě už se nezobrazují.",
+      },
+    ],
+    ctaLabel: "Prohlédnout nabídky →",
+    ctaUrl: `${SITE}/prace`,
+    outro:
+      "Chybí ti nějaký obor nebo něco nefunguje, jak by mělo? Odepiš na tento e-mail — čteme každou zprávu.",
+    unsubscribeUrl: "{{{RESEND_UNSUBSCRIBE_URL}}}",
+  },
+
+  // A — krátký dopis. Žádné dlaždice, jen pár vět a odkaz.
+  "pribeh-dopis": {
+    subject: "Něco o mně",
+    headline: "Tohle není nabídka práce",
+    intro:
+      "Ahoj, většinou ti píšu, když na webu přibyly nové nabídky. Dneska ne. Přidal jsem tam stránku o sobě — kdo za Norsko-práce.cz stojí, jak jsem se do Norska vůbec dostal a proč mě napadlo tohle dělat. Je to na pár minut čtení a je u toho i pár fotek z hor.",
+    items: [],
+    ctaLabel: "Přečíst →",
+    ctaUrl: `${SITE}/o-mne`,
+    unsubscribeUrl: "{{{RESEND_UNSUBSCRIBE_URL}}}",
+    heroImage: "email-header-pribeh.jpg",
+  },
+
+  // B — vypráví a končí v nejlepším; na web se jde dočíst zbytek.
+  "pribeh-zprava": {
+    subject: "Před čtyřmi roky jsem poslal jednu zprávu",
+    headline: "Před čtyřmi roky jsem poslal jednu zprávu",
+    intro:
+      "Měl jsem za sebou nepovedenou zkušenost s agenturou, norsky jsem neuměl ani slovo a netušil jsem, kde začít. Pak jsem si vzpomněl na známého, který v Norsku pracoval, a napsal mu. Po pár měsících jsem věděl, že tady nejsem naposledy — a dneska je to čtvrtý rok.",
+    items: [],
+    ctaLabel: "Jak to dopadlo →",
+    ctaUrl: `${SITE}/o-mne`,
+    outro:
+      "Sepsal jsem to celé na web, i s tím, proč jsem Norsko-práce.cz vlastně založil. Máš otázku? Odepiš, rád poradím.",
+    unsubscribeUrl: "{{{RESEND_UNSUBSCRIBE_URL}}}",
+    heroImage: "email-header-pribeh.jpg",
+  },
+
+  "muj-pribeh": {
+    subject: "Kdo za Norsko-práce.cz vlastně stojí",
+    headline: "Konečně jsem o sobě něco napsal",
+    intro:
+      "Většinu e-mailů ode mě dostáváš o nabídkách práce. Tenhle je jiný. Často se mě ptáte, kdo web vlastně dělá a jestli za ním nestojí agentura — tak jsem o tom sepsal stránku.",
+    items: [
+      {
+        title: "Jmenuju se Jindra a v Norsku jsem čtvrtým rokem",
+        text:
+          "Nejdřív sezónně, teď na stálo. Dostal jsem se sem velkou náhodou — po nepovedené zkušenosti s agenturou a jedné zprávě známému, který tu už pracoval.",
+      },
+      {
+        title: "Proč tenhle web vznikl",
+        text:
+          "Loni jsem měl na starost nábor nových lidí a viděl jsem, kolik Čechů a Slováků by se sem chtělo podívat. Většina se zasekne na tom, že neví, kde začít.",
+      },
+      {
+        title: "A pár fotek z Norska",
+        text:
+          "Fonnabu, Bondhusvatnet, ledovce i via ferrata. Protože tohle je ta druhá polovina toho, proč tu člověk zůstane.",
+      },
+    ],
+    ctaLabel: "Přečíst můj příběh →",
+    ctaUrl: `${SITE}/o-mne`,
+    outro:
+      "Zasekl ses někde v procesu, nebo tě něco zajímá? Napiš mi — stačí odpovědět na tento e-mail.",
+    unsubscribeUrl: "{{{RESEND_UNSUBSCRIBE_URL}}}",
+    heroImage: "email-header-pribeh.jpg",
+  },
+} satisfies Record<string, Announcement>;
+
+/** Která rozesílka se právě připravuje — náhled, test i koncept berou tuhle. */
+const ACTIVE: keyof typeof ANNOUNCEMENTS = "pribeh-dopis";
+const ANNOUNCEMENT: Announcement = ANNOUNCEMENTS[ACTIVE];
 
 // ── Režimy ───────────────────────────────────────────────────────────────────
 const [mode, arg] = process.argv.slice(2);

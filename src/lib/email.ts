@@ -91,7 +91,7 @@ ${bodyHtml}
 </td></tr>
 <tr><td style="padding:24px 28px 26px">
 <div style="border-top:1px solid #ececec;padding-top:18px;font-size:13px;line-height:1.6;color:#6b7280">
-Máš dotaz? Stačí odpovědět na tento e-mail — čteme každou zprávu.<br>Tým Norsko-práce.cz
+Tým Norsko-práce.cz
 </div>
 </td></tr></table>
 
@@ -211,6 +211,8 @@ export interface Announcement {
    * `{{{RESEND_UNSUBSCRIBE_URL}}}` — Resend ho nahradí adresou pro každého příjemce.
    */
   unsubscribeUrl: string;
+  /** Vlastní hlavičková fotka (název souboru v úložišti); jinak výchozí email-header.jpg */
+  heroImage?: string;
 }
 
 /**
@@ -240,7 +242,6 @@ Tento e-mail ti přišel, protože máš účet na <a href="${SITE}" style="colo
     `${a.ctaLabel.replace(/\s*→\s*$/, "")}: ${a.ctaUrl}`,
     ...(a.outro ? ["", a.outro] : []),
     "",
-    "Máš dotaz? Stačí odpovědět na tento e-mail.",
     "Tým Norsko-práce.cz",
     "",
     `Odhlásit odběr novinek: ${a.unsubscribeUrl}`,
@@ -252,7 +253,7 @@ Tento e-mail ti přišel, protože máš účet na <a href="${SITE}" style="colo
 ${itemsHtml}
 <p style="margin:18px 0 ${a.outro ? "22px" : "0"}">${button(a.ctaUrl, a.ctaLabel)}</p>
 ${a.outro ? `<p style="margin:0;font-size:14px;line-height:1.65;color:#4b5563">${esc(a.outro)}</p>` : ""}`,
-    { heroUrl: `${ASSETS}/images/email-header.jpg`, preheader: a.intro, footerHtml }
+    { heroUrl: `${ASSETS}/images/${a.heroImage ?? "email-header.jpg"}`, preheader: a.intro, footerHtml }
   );
 
   return {

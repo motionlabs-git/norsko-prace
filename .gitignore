@@ -43,3 +43,6 @@ next-env.d.ts
 email-preview.*
 public/email-*.html
 public/emaily.html
+
+# originály fotek před zmenšením — nepatří do repozitáře
+photo-originals/

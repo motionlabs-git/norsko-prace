@@ -48,6 +48,14 @@ export function Footer() {
               </li>
               <li>
                 <Link
+                  href="/o-mne"
+                  className="text-sm text-white/60 hover:text-white transition-colors"
+                >
+                  Můj příběh
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/ubytovani"
                   className="text-sm text-white/60 hover:text-white transition-colors"
                 >

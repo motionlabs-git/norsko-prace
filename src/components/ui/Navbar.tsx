@@ -22,6 +22,9 @@ export function Navbar({ user }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  // Rozbalená skupina v hlavním menu (na desktopu jen jedna naráz)
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const groupRef = useRef<HTMLDivElement>(null);
 
   const isActive = (path: string) => pathname.includes(path);
 
@@ -37,6 +40,16 @@ export function Navbar({ user }: NavbarProps) {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  // Klik mimo skupinu ji zavře; stejně tak přechod na jinou stránku
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (groupRef.current && !groupRef.current.contains(e.target as Node)) setOpenGroup(null);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
 
   async function handleLogout() {
     const supabase = createClient();
@@ -54,15 +67,27 @@ export function Navbar({ user }: NavbarProps) {
         .toUpperCase()
     : (user?.email.slice(0, 2).toUpperCase() ?? "?");
 
-  const navLinks: { href: string; label: string; accent?: boolean }[] = [
+  // Rady a návody jsou pod jednou rozbalovací položkou, aby se menu nelámalo.
+  // „children" = podpoložky; na mobilu se vypisují všechny, tam místo je.
+  type NavItem = { href: string; label: string; accent?: boolean; children?: { href: string; label: string; short: string; desc: string }[] };
+  const navLinks: NavItem[] = [
     { href: "/prace", label: "Sezónní práce" },
     { href: "/stale-pozice", label: "Stálé pozice" },
     { href: "/vybrane", label: "Vybrané inzeráty" },
-    { href: "/ubytovani", label: "Ubytování" },
-    { href: "/pruvodce", label: "Průvodce" },
-    { href: "/blog", label: "Blog" },
+    {
+      href: "/pruvodce",
+      label: "Průvodce",
+      children: [
+        { href: "/pruvodce", label: "Průvodce krok za krokem", short: "Průvodce", desc: "D-number, BankID, daně, první kroky" },
+        { href: "/ubytovani", label: "Ubytování", short: "Ubytování", desc: "Jak si najít bydlení před příjezdem" },
+        { href: "/blog", label: "Blog", short: "Blog", desc: "Články a zkušenosti z Norska" },
+      ],
+    },
+    { href: "/o-mne", label: "Můj příběh" },
     { href: "/premium", label: "Premium", accent: true },
   ];
+  const groupActive = (item: NavItem) =>
+    item.children ? item.children.some((c) => isActive(c.href)) : isActive(item.href);
 
   return (
     <>
@@ -84,24 +109,76 @@ export function Navbar({ user }: NavbarProps) {
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden lg:flex items-center gap-4 xl:gap-6">
-            {navLinks.map(({ href, label, accent }) => (
-              <Link
-                key={href}
-                href={href}
-                className={
-                  accent
-                    ? "whitespace-nowrap text-sm font-bold text-[var(--color-primary)] transition-opacity hover:opacity-70"
-                    : `whitespace-nowrap text-sm font-medium transition-colors hover:text-[var(--color-primary)] ${
-                        isActive(href)
-                          ? "text-[var(--color-primary)]"
-                          : "text-[var(--color-text-muted)]"
-                      }`
-                }
-              >
-                {accent ? `★ ${label}` : label}
-              </Link>
-            ))}
+          <nav className="hidden lg:flex items-center gap-4 xl:gap-6" ref={groupRef}>
+            {navLinks.map((item) =>
+              item.children ? (
+                <div key={item.label} className="relative">
+                  <button
+                    onClick={() => setOpenGroup(openGroup === item.label ? null : item.label)}
+                    aria-expanded={openGroup === item.label}
+                    aria-haspopup="true"
+                    className={`flex cursor-pointer items-center gap-1 whitespace-nowrap text-sm font-medium transition-colors hover:text-[var(--color-primary)] ${
+                      groupActive(item) || openGroup === item.label
+                        ? "text-[var(--color-primary)]"
+                        : "text-[var(--color-text-muted)]"
+                    }`}
+                  >
+                    {item.label}
+                    <svg
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      aria-hidden
+                      className={`h-4 w-4 transition-transform ${openGroup === item.label ? "rotate-180" : ""}`}
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+
+                  {openGroup === item.label && (
+                    <div className="absolute left-0 top-9 z-50 w-72 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white py-1.5 shadow-lg">
+                      {item.children.map((child) => (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={() => setOpenGroup(null)}
+                          className="block px-4 py-2.5 transition-colors hover:bg-[var(--color-bg)]"
+                        >
+                          <span
+                            className={`block text-sm font-bold ${
+                              isActive(child.href) ? "text-[var(--color-primary)]" : "text-[var(--color-text)]"
+                            }`}
+                          >
+                            {child.label}
+                          </span>
+                          <span className="block text-xs text-[var(--color-text-muted)]">{child.desc}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setOpenGroup(null)}
+                  className={
+                    item.accent
+                      ? "whitespace-nowrap text-sm font-bold text-[var(--color-primary)] transition-opacity hover:opacity-70"
+                      : `whitespace-nowrap text-sm font-medium transition-colors hover:text-[var(--color-primary)] ${
+                          isActive(item.href)
+                            ? "text-[var(--color-primary)]"
+                            : "text-[var(--color-text-muted)]"
+                        }`
+                  }
+                >
+                  {item.accent ? `★ ${item.label}` : item.label}
+                </Link>
+              )
+            )}
           </nav>
 
           {/* Right side */}
@@ -217,10 +294,13 @@ export function Navbar({ user }: NavbarProps) {
         <div className="relative flex flex-col flex-1 px-6 pt-10 pb-12 overflow-y-auto">
           <nav className="flex flex-col">
             {[
-              ...navLinks.map((l, i) => ({
-                ...l,
-                delay: `${0.1 + i * 0.05}s`,
-              })),
+              ...navLinks
+                .flatMap((l) =>
+                  l.children
+                    ? l.children.map((c) => ({ href: c.href, label: c.short }))
+                    : [{ href: l.href, label: l.label }]
+                )
+                .map((l, i) => ({ ...l, delay: `${0.1 + i * 0.05}s` })),
               ...(user
                 ? [
                     { href: "/oblibene", label: "Oblíbené", delay: "0.38s" },

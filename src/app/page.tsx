@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { getFeaturedJobs, localizeJob, getCategoryMeta } from "@/lib/jobs";
 import { JobCard } from "@/components/jobs/JobCard";
 import { Reveal } from "@/components/ui/Reveal";
@@ -36,6 +37,7 @@ export default async function HomePage() {
       <HeroSection />
       <FeaturedJobs items={localizedJobs} />
       <HowItWorks />
+      <AboutTeaser />
       <BlogCta />
     </>
   );
@@ -318,6 +320,50 @@ function HowItWorks() {
             Procházet inzeráty →
           </Link>
         </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Kdo za tím stojí ──────────────────────────────────────────────────────────
+
+function AboutTeaser() {
+  return (
+    <section className="bg-white py-16 md:py-20">
+      <div className="mx-auto max-w-6xl px-4 md:px-8">
+        <Reveal>
+          <div className="grid items-center gap-8 rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg)] p-6 md:grid-cols-[auto_1fr_auto] md:gap-10 md:p-10">
+            <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-full md:h-32 md:w-32">
+              <Image
+                src="/images/o-mne/uvodni.jpeg"
+                alt="Jindra"
+                fill
+                sizes="128px"
+                className="object-cover"
+              />
+            </div>
+            <div>
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#fde8ec] px-3.5 py-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#C8102E]" />
+                <span className="text-xs font-bold uppercase tracking-widest text-[#C8102E]">Kdo za projektem stojí</span>
+              </div>
+              <h2 className="text-2xl font-extrabold tracking-tight text-[var(--color-text)] md:text-3xl">
+                V Norsku již pracuji 4 roky.
+              </h2>
+              <p className="mt-3 max-w-xl leading-relaxed text-[var(--color-text-muted)]">
+                Nejdřív sezónně, teď na stálo. Loni jsem měl na starost nábor nových lidí a viděl jsem,
+                kolik Čechů a Slováků by se sem chtělo podívat. Proto jsem začal přemýšlet nad tímto
+                projektem.
+              </p>
+            </div>
+            <Link
+              href="/o-mne"
+              className="cta-arrow inline-flex flex-shrink-0 items-center gap-2 self-start rounded-full bg-[var(--color-primary)] px-7 py-3.5 text-base font-bold text-white transition hover:opacity-90 md:self-center"
+            >
+              Můj příběh
+            </Link>
+          </div>
+        </Reveal>
       </div>
     </section>
   );

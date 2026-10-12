@@ -40,8 +40,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     fullName = profile?.full_name ?? null;
   }
 
+  // data-scroll-behavior: bez něj Next plynulé posouvání z CSS při přechodech mezi
+  // stránkami ignoruje a v konzoli na to upozorňuje
   return (
-    <html lang="cs" className="h-full antialiased">
+    <html lang="cs" className="h-full antialiased" data-scroll-behavior="smooth">
       <body className="min-h-full flex flex-col">
         <PostHogProvider user={user ? { distinctId: user.id, email: user.email ?? "" } : null}>
           <Navbar user={user ? { email: user.email ?? "", fullName, role } : null} />
