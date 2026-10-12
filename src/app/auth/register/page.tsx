@@ -9,6 +9,8 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [agreed, setAgreed] = useState(false);
+  // Odhlášení z novinek rovnou při registraci; výchozí stav je odebírat
+  const [noEmails, setNoEmails] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -22,7 +24,9 @@ export default function RegisterPage() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName } },
+      // Volba putuje do metadat účtu; do profilu se přepíše po potvrzení adresy
+      // (v /auth/callback), protože profil ještě v tuhle chvíli nemusí existovat
+      options: { data: { full_name: fullName, marketing_opt_in: !noEmails } },
     });
 
     if (error) {
@@ -96,6 +100,15 @@ export default function RegisterPage() {
               <Link href="/terms" className="font-semibold text-[var(--color-primary)] hover:underline">podmínkami použití</Link>{" "}
               a{" "}
               <Link href="/privacy" className="font-semibold text-[var(--color-primary)] hover:underline">zásadami ochrany osobních údajů</Link>.
+            </span>
+          </label>
+
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input type="checkbox" checked={noEmails} onChange={(e) => setNoEmails(e.target.checked)}
+              className="mt-0.5 h-4 w-4 flex-shrink-0 rounded border-[var(--color-border)] accent-[var(--color-primary)]" />
+            <span className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+              Nechci dostávat e-mailová oznámení o novinkách a nových pracovních nabídkách.
+              Potvrzení o registraci a platbách chodí vždy.
             </span>
           </label>
 

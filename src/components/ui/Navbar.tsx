@@ -293,23 +293,107 @@ export function Navbar({ user }: NavbarProps) {
 
         <div className="relative flex flex-col flex-1 px-6 pt-10 pb-12 overflow-y-auto">
           <nav className="flex flex-col">
+            {navLinks.map((item, i) => {
+              const delay = `${0.1 + i * 0.05}s`;
+              const reveal = {
+                opacity: menuOpen ? 1 : 0,
+                transform: menuOpen ? "translateX(0)" : "translateX(-16px)",
+                transition: "opacity 0.3s ease, transform 0.3s ease",
+                transitionDelay: menuOpen ? delay : "0s",
+              } as const;
+
+              // Skupina se na mobilu rozbaluje stejně jako na počítači, aby menu
+              // nebylo zbytečně dlouhé
+              if (item.children) {
+                const open = openGroup === item.label;
+                return (
+                  <div key={item.label} style={reveal}>
+                    <button
+                      onClick={() => setOpenGroup(open ? null : item.label)}
+                      aria-expanded={open}
+                      className="flex w-full cursor-pointer items-center justify-between border-b border-white/10 py-5"
+                    >
+                      <span
+                        className={`text-2xl font-extrabold tracking-tight transition-colors ${
+                          groupActive(item) || open ? "text-white" : "text-white/40"
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+                      <svg
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        aria-hidden
+                        className={`h-6 w-6 text-white/50 transition-transform ${open ? "rotate-180" : ""}`}
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+
+                    {open &&
+                      item.children.map((child) => (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={() => {
+                            setMenuOpen(false);
+                            setOpenGroup(null);
+                          }}
+                          className="flex items-center justify-between border-b border-white/10 py-4 pl-5"
+                        >
+                          <span
+                            className={`text-lg font-bold transition-colors ${
+                              isActive(child.href) ? "text-white" : "text-white/45"
+                            }`}
+                          >
+                            {child.short}
+                          </span>
+                          <span className="text-lg text-white/30">→</span>
+                        </Link>
+                      ))}
+                  </div>
+                );
+              }
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMenuOpen(false)}
+                  className="group flex items-center justify-between border-b border-white/10 py-5"
+                  style={reveal}
+                >
+                  <span
+                    className={`text-2xl font-extrabold tracking-tight transition-colors ${
+                      isActive(item.href) ? "text-white" : "text-white/40"
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+                  <span
+                    className={`text-2xl transition-opacity ${
+                      isActive(item.href) ? "text-white opacity-100" : "text-white opacity-30"
+                    }`}
+                  >
+                    →
+                  </span>
+                </Link>
+              );
+            })}
+
+            {/* Odkazy přihlášeného uživatele až pod hlavní nabídkou */}
             {[
-              ...navLinks
-                .flatMap((l) =>
-                  l.children
-                    ? l.children.map((c) => ({ href: c.href, label: c.short }))
-                    : [{ href: l.href, label: l.label }]
-                )
-                .map((l, i) => ({ ...l, delay: `${0.1 + i * 0.05}s` })),
               ...(user
                 ? [
                     { href: "/oblibene", label: "Oblíbené", delay: "0.38s" },
                     { href: "/profil", label: "Profil", delay: "0.43s" },
                   ]
                 : []),
-              ...(user?.role === "admin"
-                ? [{ href: "/admin", label: "Admin", delay: "0.48s" }]
-                : []),
+              ...(user?.role === "admin" ? [{ href: "/admin", label: "Admin", delay: "0.48s" }] : []),
             ].map(({ href, label, delay }) => (
               <Link
                 key={href}

@@ -5,6 +5,7 @@ import { getEntitlement, hasPremiumPlus, getContactAccess, FREE_CONTACT_LIMIT } 
 import { reconcileSubscription } from "@/lib/subscription-sync";
 import { ManageSubscriptionButton } from "@/components/premium/ManageSubscriptionButton";
 import { ProfileForm } from "./ProfileForm";
+import { EmailPreferences } from "./EmailPreferences";
 
 export const metadata = { title: "Můj profil" };
 
@@ -17,7 +18,7 @@ export default async function ProfilPage({ searchParams }: { searchParams: Promi
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, role")
+    .select("full_name, role, marketing_opt_in")
     .eq("id", user.id)
     .single();
 
@@ -95,6 +96,10 @@ export default async function ProfilPage({ searchParams }: { searchParams: Promi
               </div>
             )}
           </div>
+        </div>
+
+        <div className="mt-6">
+          <EmailPreferences userId={user.id} initialOptIn={profile?.marketing_opt_in !== false} />
         </div>
       </div>
     </div>

@@ -20,7 +20,7 @@ for (const line of fs.readFileSync(".env.local", "utf-8").split("\n")) {
   process.env[t.slice(0, i).trim()] ??= t.slice(i + 1).trim().replace(/^["']|["']$/g, "");
 }
 
-const { announcementEmail, sendEmail } = await import("@/lib/email");
+const { announcementEmail } = await import("@/lib/email");
 
 const SITE = "https://norsko-prace.cz";
 
@@ -134,18 +134,8 @@ const ANNOUNCEMENT: Announcement = ANNOUNCEMENTS[ACTIVE];
 const [mode, arg] = process.argv.slice(2);
 const key = process.env.RESEND_API_KEY;
 
-async function resendApi(path: string, init?: RequestInit) {
-  const res = await fetch(`https://api.resend.com${path}`, {
-    ...init,
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...(init?.headers ?? {}) },
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(`Resend ${res.status}: ${JSON.stringify(body).slice(0, 300)}`);
-  return body as Record<string, unknown>;
-}
-
 if (mode === "--preview") {
-  const msg = announcementEmail("nahled@example.com", { ...ANNOUNCEMENT, unsubscribeUrl: `${SITE}/profil` });
+  const msg = announcementEmail("nahled@example.com", { ...ANNOUNCEMENT, unsubscribeUrl: `${SITE}/odhlasit` });
   fs.writeFileSync("email-preview.html", msg.html);
   fs.writeFileSync("email-preview.txt", msg.text);
   console.log(`Předmět: ${msg.subject}`);
@@ -153,86 +143,57 @@ if (mode === "--preview") {
   console.log("Text:  email-preview.txt   (verze pro klienty bez HTML)");
 } else if (mode === "--test") {
   if (!arg) { console.error("Zadej adresu: --test tvuj@email.cz"); process.exit(1); }
-  // V testu musí být odhlašovací odkaz skutečná adresa, ne zástupný text rozesílky
-  await sendEmail(announcementEmail(arg, { ...ANNOUNCEMENT, unsubscribeUrl: `${SITE}/profil` }));
+  const { sendEmail } = await import("@/lib/email");
+  await sendEmail(announcementEmail(arg, { ...ANNOUNCEMENT, unsubscribeUrl: `${SITE}/odhlasit` }));
   console.log(`✅ testovací e-mail odeslán na ${arg}`);
-} else if (mode === "--contacts") {
+} else if (mode === "--list") {
+  const { marketingRecipients } = await import("@/lib/marketing");
+  const { recipients, skipped } = await marketingRecipients();
+  console.log(`příjemců: ${recipients.length}`);
+  console.log(`přeskočeno: ${skipped.unconfirmed} bez potvrzené adresy, ${skipped.optedOut} odhlášených`);
+  for (const r of recipients.slice(0, 5)) console.log("  ", r.email);
+  if (recipients.length > 5) console.log(`   … a dalších ${recipients.length - 5}`);
+} else if (mode === "--send") {
   if (!key) { console.error("Chybí RESEND_API_KEY"); process.exit(1); }
-  const { createClient } = await import("@supabase/supabase-js");
-  const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-    auth: { persistSession: false },
-  });
-
-  const emails: string[] = [];
-  for (let page = 1; page <= 20; page++) {
-    const { data, error } = await db.auth.admin.listUsers({ page, perPage: 200 });
-    if (error) throw new Error(error.message);
-    // Jen potvrzené adresy — nepotvrzené by kazily doručitelnost
-    for (const u of data.users) if (u.email && u.email_confirmed_at) emails.push(u.email);
-    if (data.users.length < 200) break;
+  if (arg !== "potvrzuji") {
+    console.error("Rozesílka se spouští takto:  --send potvrzuji");
+    console.error("(pojistka proti nechtěnému odeslání stovce lidí)");
+    process.exit(1);
   }
-  console.log(`uživatelů s potvrzenou adresou: ${emails.length}`);
 
-  // Výchozí je „General" — segment, který Resend zakládá sám a na který míří
-  // rozesílka vytvořená v jeho rozhraní. Jiný lze zadat: --contacts Novinky
-  const segmentName = arg ?? "General";
-  const segments = (await resendApi("/segments")) as { data?: { id: string; name: string }[] };
-  let segment = (segments.data ?? []).find((s) => s.name === segmentName);
-  if (!segment) {
-    const created = (await resendApi("/segments", {
+  const { marketingRecipients } = await import("@/lib/marketing");
+  const { recipients, skipped } = await marketingRecipients();
+  console.log(`odesílám „${ANNOUNCEMENT.subject}" na ${recipients.length} adres`);
+  console.log(`(přeskočeno ${skipped.unconfirmed} nepotvrzených, ${skipped.optedOut} odhlášených)\n`);
+
+  const FROM = process.env.EMAIL_FROM ?? "Norsko-práce.cz <info@norsko-prace.cz>";
+  let sent = 0;
+  // Resend přijímá nejvýš 100 zpráv v jednom dávkovém volání
+  for (let i = 0; i < recipients.length; i += 100) {
+    const chunk = recipients.slice(i, i + 100);
+    const payload = chunk.map((r) => {
+      // Každý příjemce dostane vlastní odhlašovací odkaz se svým podpisem
+      const msg = announcementEmail(r.email, { ...ANNOUNCEMENT, unsubscribeUrl: r.unsubscribeUrl });
+      return { from: FROM, to: msg.to, subject: msg.subject, html: msg.html, text: msg.text, headers: msg.headers };
+    });
+    const res = await fetch("https://api.resend.com/emails/batch", {
       method: "POST",
-      body: JSON.stringify({ name: segmentName }),
-    })) as { id: string };
-    segment = { id: created.id, name: segmentName };
-    console.log(`vytvořen segment „${segmentName}" (${created.id})`);
-  } else {
-    console.log(`segment „${segmentName}" (${segment.id})`);
-  }
-
-  let added = 0, skipped = 0;
-  const problems: string[] = [];
-  for (const email of emails) {
-    try {
-      await resendApi("/contacts", {
-        method: "POST",
-        body: JSON.stringify({ email, unsubscribed: false, segments: [{ id: segment.id }] }),
-      });
-      added++;
-    } catch (err) {
-      // Existující kontakt je v pořádku; cokoli jiného musí být vidět, ne spolknuté
-      skipped++;
-      const msg = err instanceof Error ? err.message : String(err);
-      if (problems.length < 3 && !/already exists/i.test(msg)) problems.push(`${email}: ${msg}`);
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.error(`dávka ${i / 100 + 1} selhala: ${res.status} ${JSON.stringify(body).slice(0, 300)}`);
+      process.exit(1);
     }
+    sent += chunk.length;
+    console.log(`  odesláno ${sent}/${recipients.length}`);
   }
-  console.log(`přidáno ${added}, přeskočeno ${skipped}`);
-  for (const p of problems) console.log("  ⚠️ ", p);
-
-  const check = (await resendApi(`/segments/${segment.id}/contacts`)) as { data?: unknown[] };
-  console.log(`v segmentu je teď ${check.data?.length ?? 0} kontaktů`);
-} else if (mode === "--broadcast") {
-  if (!key) { console.error("Chybí RESEND_API_KEY"); process.exit(1); }
-  if (!arg) { console.error("Zadej segment: --broadcast <segmentId>"); process.exit(1); }
-  const msg = announcementEmail("", ANNOUNCEMENT);
-  const created = (await resendApi("/broadcasts", {
-    method: "POST",
-    body: JSON.stringify({
-      segmentId: arg,
-      from: process.env.EMAIL_FROM ?? "Norsko-práce.cz <info@norsko-prace.cz>",
-      replyTo: "info@norsko-prace.cz",
-      subject: ANNOUNCEMENT.subject,
-      name: ANNOUNCEMENT.subject,
-      previewText: ANNOUNCEMENT.intro.slice(0, 90),
-      html: msg.html,
-      text: msg.text,
-    }),
-  })) as { id: string };
-  console.log(`✅ rozesílka připravená jako koncept (${created.id})`);
-  console.log("   Zkontroluj ji v Resendu (Broadcasts) a odešli tlačítkem — skript nic neposílá.");
+  console.log("\n✅ hotovo");
 } else {
   console.log(`Použití:
-  npx tsx scripts/announce.mts --preview
-  npx tsx scripts/announce.mts --test tvuj@email.cz
-  npx tsx scripts/announce.mts --contacts
-  npx tsx scripts/announce.mts --broadcast <segmentId>`);
+  npx tsx scripts/announce.mts --preview            náhled do email-preview.html
+  npx tsx scripts/announce.mts --test tvuj@email.cz jeden testovací e-mail
+  npx tsx scripts/announce.mts --list               komu by rozesílka šla
+  npx tsx scripts/announce.mts --send potvrzuji     ostrá rozesílka`);
 }
