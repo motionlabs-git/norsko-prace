@@ -95,6 +95,16 @@ export function Footer() {
             >
               Procházet inzeráty →
             </Link>
+
+            <div className="mt-7 border-t border-white/10 pt-5">
+              <h3 className="mb-2 text-xs font-bold uppercase tracking-widest text-white/40">Kontakt</h3>
+              <a
+                href="mailto:info@norsko-prace.cz"
+                className="text-sm font-semibold text-white/60 transition-colors hover:text-white"
+              >
+                info@norsko-prace.cz
+              </a>
+            </div>
           </div>
         </div>
 

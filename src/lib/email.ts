@@ -91,7 +91,8 @@ ${bodyHtml}
 </td></tr>
 <tr><td style="padding:24px 28px 26px">
 <div style="border-top:1px solid #ececec;padding-top:18px;font-size:13px;line-height:1.6;color:#6b7280">
-Tým Norsko-práce.cz
+Máš dotaz? Stačí odpovědět na tento e-mail nebo napsat na
+<a href="mailto:info@norsko-prace.cz" style="color:#046353">info@norsko-prace.cz</a> — čteme každou zprávu.<br>Tým Norsko-práce.cz
 </div>
 </td></tr></table>
 
@@ -242,6 +243,7 @@ Tento e-mail ti přišel, protože máš účet na <a href="${SITE}" style="colo
     `${a.ctaLabel.replace(/\s*→\s*$/, "")}: ${a.ctaUrl}`,
     ...(a.outro ? ["", a.outro] : []),
     "",
+    "Máš dotaz? Stačí odpovědět na tento e-mail nebo napsat na info@norsko-prace.cz.",
     "Tým Norsko-práce.cz",
     "",
     `Odhlásit odběr novinek: ${a.unsubscribeUrl}`,

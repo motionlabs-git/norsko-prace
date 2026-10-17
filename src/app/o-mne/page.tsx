@@ -24,7 +24,11 @@ function PhotoPlaceholder({
   className?: string;
 }) {
   const aspect =
-    ratio === "portrait" ? "aspect-[4/5]" : ratio === "square" ? "aspect-square" : "aspect-[16/9]";
+    ratio === "portrait"
+      ? "aspect-[4/5]"
+      : ratio === "square"
+        ? "aspect-square"
+        : "aspect-[16/9]";
   return (
     <div
       className={`flex ${aspect} w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[var(--color-border)] bg-[var(--color-bg)] p-6 text-center ${className}`}
@@ -41,9 +45,15 @@ function PhotoPlaceholder({
         <circle cx="8.5" cy="8.5" r="1.5" />
         <path d="M21 15l-5-5L5 21" />
       </svg>
-      <p className="text-sm font-semibold text-[var(--color-text-muted)]">{label}</p>
+      <p className="text-sm font-semibold text-[var(--color-text-muted)]">
+        {label}
+      </p>
       <p className="text-xs text-[var(--color-text-muted)]/70">
-        {ratio === "portrait" ? "poměr 4:5" : ratio === "square" ? "poměr 1:1" : "poměr 16:9"}
+        {ratio === "portrait"
+          ? "poměr 4:5"
+          : ratio === "square"
+            ? "poměr 1:1"
+            : "poměr 16:9"}
       </p>
     </div>
   );
@@ -75,10 +85,16 @@ function Photo({
   objectPosition?: string;
 }) {
   const aspect =
-    ratio === "portrait" ? "aspect-[3/4]" : ratio === "square" ? "aspect-square" : "aspect-[4/3]";
+    ratio === "portrait"
+      ? "aspect-[3/4]"
+      : ratio === "square"
+        ? "aspect-square"
+        : "aspect-[4/3]";
   return (
     <figure className="m-0">
-      <div className={`relative ${aspect} w-full overflow-hidden rounded-2xl bg-[var(--color-bg)]`}>
+      <div
+        className={`relative ${aspect} w-full overflow-hidden rounded-2xl bg-[var(--color-bg)]`}
+      >
         <Image
           src={src}
           alt={alt}
@@ -90,7 +106,9 @@ function Photo({
         />
       </div>
       {caption && (
-        <figcaption className="mt-2 text-sm text-[var(--color-text-muted)]">{caption}</figcaption>
+        <figcaption className="mt-2 text-sm text-[var(--color-text-muted)]">
+          {caption}
+        </figcaption>
       )}
     </figure>
   );
@@ -107,29 +125,36 @@ const GALLERY: { src: string; alt: string }[] = [
   { src: "/images/o-mne/Koupani_ve_vodopadu.jpeg", alt: "Koupání ve vodopádu" },
 ];
 
-
 export default function OMnePage() {
   return (
     <div className="bg-[var(--color-bg)]">
       {/* Hero: text vlevo, portrét vpravo */}
-      <section className="py-16 md:py-20" style={{ background: "linear-gradient(135deg, #001849 0%, #003087 100%)" }}>
+      <section
+        className="py-16 md:py-20"
+        style={{
+          background: "linear-gradient(135deg, #001849 0%, #003087 100%)",
+        }}
+      >
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 md:grid-cols-[1.2fr_1fr] md:px-8">
           <div>
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 backdrop-blur-sm">
               <span className="h-1.5 w-1.5 rounded-full bg-[#C8102E]" />
-              <span className="text-xs font-bold uppercase tracking-widest text-white/80">Můj příběh</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-white/80">
+                Můj příběh
+              </span>
             </div>
             <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-white md:text-5xl">
               Ahoj, jmenuju se Jindra
             </h1>
             <p className="mt-4 max-w-xl text-lg leading-relaxed text-white/70">
-              Je mi 24 a už čtvrtým rokem pracuji v Norsku. Z počátku pouze jako sezonní pracovník, poslední
-              rok jsem tu už na stálo.
+              Je mi 24 a už čtvrtým rokem pracuji v Norsku. Z počátku pouze jako
+              sezonní pracovník, poslední rok jsem tu už na stálo.
             </p>
             <div className="mt-8 border-t border-white/15 pt-6">
               <p className="mb-4 max-w-md text-white/55">
-                Jak se člověk z Česka ocitne v Norsku a zůstane tu čtvrtý rok? Nic velkolepého
-                za tím není — spíš jedna zpráva, kterou jsem tehdy poslal.
+                Jak se člověk z Česka ocitne v Norsku a zůstane tu čtvrtý rok?
+                Nic velkolepého za tím není — spíš jedna zpráva, kterou jsem
+                tehdy poslal.
               </p>
               <a
                 href="#pribeh"
@@ -175,21 +200,25 @@ export default function OMnePage() {
           </h2>
 
           <p className="mt-5 text-lg leading-relaxed text-[var(--color-text-muted)]">
-            Zcela upřímně… velikou náhodou. Po první pracovní zkušenosti ještě v Čechách mě napadlo
-            vyzkoušet něco šíleného, pro mě v té době nepředstavitelného — zkusit život jinde.
+            Zcela upřímně… velikou náhodou. Po první pracovní zkušenosti ještě v
+            Čechách mě napadlo vyzkoušet něco šíleného, pro mě v té době
+            nepředstavitelného — zkusit život jinde.
           </p>
 
           <blockquote className="my-10 border-l-4 border-[#C8102E] pl-6">
             <p className="text-xl font-bold leading-snug text-[var(--color-text)] md:text-2xl">
-              Dobře si vzpomínám na ten pocit. Jak začít? Kde práci hledat? Umím se vůbec domluvit?
+              Dobře si vzpomínám na ten pocit. Jak začít? Kde práci hledat? Umím
+              se vůbec domluvit?
             </p>
           </blockquote>
 
           <p className="text-lg leading-relaxed text-[var(--color-text-muted)]">
-            Naštěstí jsem si v té době vzpomněl na známého, který už za sebou pracovní zkušenost
-            v zahraničí měl, a to právě v Norsku. Po neúspěchu s agenturou a její prací v Holandsku
-            (nedoporučuji to ani zkoušet) jsem napsal právě jemu. Dostal jsem kontakt, napsal jsem první
-            zprávu — a po prvních pár měsících jsem věděl, že tady nejsem rozhodně naposledy.
+            Naštěstí jsem si v té době vzpomněl na známého, který už za sebou
+            pracovní zkušenost v zahraničí měl, a to právě v Norsku. Po
+            neúspěchu s agenturou a její prací v Holandsku (nedoporučuji to ani
+            zkoušet) jsem napsal právě jemu. Dostal jsem kontakt, napsal jsem
+            první zprávu — a po prvních pár měsících jsem věděl, že tady nejsem
+            rozhodně naposledy.
           </p>
 
           <div className="my-12">
@@ -209,14 +238,15 @@ export default function OMnePage() {
           </h2>
 
           <p className="mt-5 text-lg leading-relaxed text-[var(--color-text-muted)]">
-            Jelikož jsem se poslední sezónu postaral o nábor nových lidí, viděl jsem, jak veliký zájem by
-            o práci právě v Norsku byl. Zároveň vím, co to všechno obnáší a jaké jsou rozdíly mezi Norskem
-            a Českem.
+            Jelikož jsem se poslední sezónu postaral o nábor nových lidí, viděl
+            jsem, jak veliký zájem by o práci právě v Norsku byl. Zároveň vím,
+            co to všechno obnáší a jaké jsou rozdíly mezi Norskem a Českem.
           </p>
 
           <p className="mt-5 text-lg leading-relaxed text-[var(--color-text-muted)]">
-            Všechno tohle jsem zabalil do jednoho balíčku a vytvořil platformu, která ti zaručí pohodovou
-            práci. Veškeré informace a nástroje jsou ti otevřeny.
+            Všechno tohle jsem zabalil do jednoho balíčku a vytvořil platformu,
+            která ti zaručí pohodovou práci. Veškeré informace a nástroje jsou
+            ti otevřeny.
           </p>
 
           <div className="mt-12 grid gap-5 sm:grid-cols-2">
@@ -245,8 +275,8 @@ export default function OMnePage() {
             Zasekl ses někde v procesu?
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg leading-relaxed text-[var(--color-text-muted)]">
-            Pokud máš s jakýmkoliv krokem problém, napiš mi na e-mail nebo na Instagram. Pokusím se ti
-            pomoci.
+            Pokud máš s jakýmkoliv krokem problém, napiš mi na e-mail nebo na
+            Instagram. Pokusím se ti pomoci.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <a
@@ -262,7 +292,12 @@ export default function OMnePage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-7 py-3.5 text-base font-medium text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
             >
-              <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5" aria-hidden>
+              <svg
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="h-5 w-5"
+                aria-hidden
+              >
                 <path d="M12 2.163c3.204 0 3.584.012 4.85.07 1.17.053 1.805.249 2.227.415.562.218.96.479 1.382.9.422.422.682.82.9 1.382.166.422.362 1.057.415 2.227.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.053 1.17-.249 1.805-.415 2.227-.218.562-.479.96-.9 1.382-.422.422-.82.682-1.382.9-.422.166-1.057.362-2.227.415-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.17-.053-1.805-.249-2.227-.415-.562-.218-.96-.479-1.382-.9-.422-.422-.682-.82-.9-1.382-.166-.422-.362-1.057-.415-2.227C2.175 15.584 2.163 15.204 2.163 12s.012-3.584.07-4.85c.053-1.17.249-1.805.415-2.227.218-.562.479-.96.9-1.382.422-.422.82-.682 1.382-.9.422-.166 1.057-.362 2.227-.415C8.416 2.175 8.796 2.163 12 2.163zm0 5.675a4.162 4.162 0 100 8.324 4.162 4.162 0 000-8.324zm0 6.863a2.701 2.701 0 110-5.402 2.701 2.701 0 010 5.402zm5.3-7.025a.972.972 0 11-1.944 0 .972.972 0 011.944 0z" />
               </svg>
               Instagram
@@ -270,7 +305,10 @@ export default function OMnePage() {
           </div>
           <p className="mt-10 text-sm text-[var(--color-text-muted)]">
             Nebo se rovnou podívej na{" "}
-            <Link href="/prace" className="font-semibold text-[var(--color-primary)] hover:underline">
+            <Link
+              href="/prace"
+              className="font-semibold text-[var(--color-primary)] hover:underline"
+            >
               aktuální nabídky práce
             </Link>
             .
@@ -287,13 +325,15 @@ export default function OMnePage() {
             <div>
               <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#fde8ec] px-3.5 py-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#C8102E]" />
-                <span className="text-xs font-bold uppercase tracking-widest text-[#C8102E]">Instagram</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-[#C8102E]">
+                  Instagram
+                </span>
               </div>
               <h2 className="text-2xl font-extrabold tracking-tight text-[var(--color-text)] md:text-3xl">
                 Jak to v Norsku vypadá
               </h2>
               <p className="mt-2 max-w-xl text-[var(--color-text-muted)]">
-                Fotky z práce, z cest i z běžných dní. Více najdeš u mě na instagramu.
+                Fotky z výletů po Norsku. Více najdeš u mě na instagramu.
               </p>
             </div>
             <a
@@ -309,7 +349,10 @@ export default function OMnePage() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {GALLERY.length > 0
               ? GALLERY.map((photo) => (
-                  <div key={photo.src} className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-[var(--color-bg)]">
+                  <div
+                    key={photo.src}
+                    className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-[var(--color-bg)]"
+                  >
                     <Image
                       src={photo.src}
                       alt={photo.alt}
@@ -320,7 +363,11 @@ export default function OMnePage() {
                   </div>
                 ))
               : Array.from({ length: 6 }, (_, i) => (
-                  <PhotoPlaceholder key={i} label={`Fotka ${i + 1}`} ratio="square" />
+                  <PhotoPlaceholder
+                    key={i}
+                    label={`Fotka ${i + 1}`}
+                    ratio="square"
+                  />
                 ))}
           </div>
         </div>
