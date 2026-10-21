@@ -17,6 +17,13 @@ export interface Season {
   monthsLabel: string;
   /** Od kterých měsíců v roce má smysl sezónu vůbec nabízet */
   offeredInMonths: number[];
+  /**
+   * Typické profese sezóny — nabídky, které je mají v názvu, jdou ve výpisu nahoru.
+   * Porovnává se proti `search_title`: bez diakritiky, malými písmeny, ø→o.
+   * Hvězdička zastupuje libovolný text (používá se místo mezery).
+   * Krátká slova jako „ski" sem nepatří — chytají i norské „skift" nebo město Ski.
+   */
+  keywords: string[];
 }
 
 export const SEASONS: Season[] = [
@@ -27,6 +34,11 @@ export const SEASONS: Season[] = [
     monthsLabel: "listopad – duben",
     // Zimní nabídky vycházejí od konce srpna; v květnu až červenci už nemá co nabízet
     offeredInMonths: [8, 9, 10, 11, 12, 1, 2, 3, 4],
+    keywords: [
+      "lyzar", "vlek", "sneh", "snez", "zimni*sezon", "vanoc", "alpin",
+      "skisenter", "skianlegg", "skiheis", "skitrekk", "broyt", "vinterse",
+      "julesesong", "langrenn", "snoscooter", "snoprod", "nordlys", "polarni*zar",
+    ],
   },
   {
     key: "leto",
@@ -36,6 +48,11 @@ export const SEASONS: Season[] = [
     // Letní nábor běží od ledna (dohodnuto) do srpna; v září už sezóna dobíhá
     // a nabízet ji nemá smysl — zbývalo by z ní pár dní.
     offeredInMonths: [1, 2, 3, 4, 5, 6, 7, 8],
+    keywords: [
+      "letni*sezon", "sommerse", "sommerjobb", "feriejobb", "bærplukk", "barplukk",
+      "jordbær", "jordbar", "plukking", "sber*ovoce", "camping", "kemp", "turist",
+      "pruvodce", "festival", "zmrzlin",
+    ],
   },
 ];
 

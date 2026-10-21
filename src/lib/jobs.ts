@@ -168,7 +168,18 @@ export async function getJobs({
   engagementType?: string;
   city?: string;
   search?: string;
-  period?: { from: string; to: string; onlyKnown?: boolean };
+  period?: {
+    from: string;
+    to: string;
+    onlyKnown?: boolean;
+    /**
+     * Jen nabídky, které v okně ZAČÍNAJÍ. Pro sezónní rozcestník: práce, která
+     * běží od loňska a do zimy jen zasahuje, není „zimní sezóna“.
+     */
+    startsOnly?: boolean;
+    /** Typické profese sezóny — nabídky s nimi v názvu jdou nahoru. */
+    priorityTerms?: string[];
+  };
   norwegianOk?: boolean;
   accommodation?: boolean;
   /** Větev inzerátů: sezónní (/prace) nebo stálé pozice (/stale-pozice) */
@@ -242,9 +253,30 @@ export async function getJobs({
     const arrivalTol = isoDay(a - 14 * DAY_MS);
     const departureTol = isoDay(b + 14 * DAY_MS);
     const openEndMin = isoDay(a - 60 * DAY_MS); // bez konce: nástup max 60 dní před příjezdem
+    const startsInWindow = (q: Q) =>
+      inText(q).gte("work_start", arrivalTol).lte("work_start", departureTol);
+
+    if (period.startsOnly) {
+      // Sezónní rozcestník: jen nabídky začínající v okně, typické profese napřed
+      const terms = period.priorityTerms ?? [];
+      const pattern = (t: string) => `%${t.replace(/\*/g, "%")}%`;
+      tiers = terms.length
+        ? [
+            (q) =>
+              startsInWindow(q)
+                .or(terms.map((t) => `search_title.ilike.*${t}*`).join(","))
+                .order("work_start", { ascending: true }),
+            // Zbytek: název neobsahuje ani jedno z typických slov
+            (q) =>
+              terms
+                .reduce((acc, t) => acc.not("search_title", "ilike", pattern(t)), startsInWindow(q))
+                .order("work_start", { ascending: true }),
+          ]
+        : [(q) => startsInWindow(q).order("work_start", { ascending: true })];
+    } else {
     tiers = [
       // 1) začíná kolem příjezdu nebo během pobytu → podle nástupu
-      (q) => inText(q).gte("work_start", arrivalTol).lte("work_start", departureTol)
+      (q) => startsInWindow(q)
         .order("work_start", { ascending: true }),
       // 2) už běží a pokračuje i během pobytu → nejčerstvější nástup první
       (q) => inText(q).lt("work_start", arrivalTol)
@@ -253,6 +285,7 @@ export async function getJobs({
       // 3) bez uvedeného termínu
       ...(period.onlyKnown ? [] : [(q: Q) => inText(q).is("work_start", null)]),
     ];
+    }
   } else if (terms.length > 0) {
     // Relevance hledání: 1) všechna slova v názvu/firmě/místě, 2) zbytek (slova jen v popisu)
     tiers = [

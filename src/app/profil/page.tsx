@@ -70,9 +70,11 @@ export default async function ProfilPage({ searchParams }: { searchParams: Promi
               <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-4">
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center rounded-full bg-[var(--color-primary-light)] px-3 py-1 text-xs font-bold text-[var(--color-primary)]">
-                    {hasPremiumPlus(ent) ? "Premium Plus" : "Premium"}
+                    {ent.status === "admin" ? "Správce" : hasPremiumPlus(ent) ? "Premium Plus" : "Premium"}
                   </span>
-                  <span className="text-xs font-semibold text-emerald-600">Aktivní</span>
+                  <span className="text-xs font-semibold text-emerald-600">
+                    {ent.status === "admin" ? "Plný přístup bez předplatného" : "Aktivní"}
+                  </span>
                 </div>
                 {ent.currentPeriodEnd && (
                   <p className="mt-2 text-xs text-[var(--color-text-muted)]">

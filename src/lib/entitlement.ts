@@ -21,9 +21,23 @@ const FREE: Entitlement = {
 
 const ACTIVE_STATUSES = ["active", "trialing"];
 
+// Správce má přístup ke všemu bez předplatného — jinak by při každé kontrole webu
+// narážel na vlastní paywall. Nejde o placený nárok, proto zvláštní status.
+const ADMIN: Entitlement = {
+  tier: "premium_plus",
+  active: true,
+  status: "admin",
+  currentPeriodEnd: null,
+  cancelAtPeriodEnd: false,
+};
+
 export async function getEntitlement(userId: string | null | undefined): Promise<Entitlement> {
   if (!userId) return FREE;
   const db = await createServerSupabase();
+
+  const { data: profile } = await db.from("profiles").select("role").eq("id", userId).maybeSingle();
+  if (profile?.role === "admin") return ADMIN;
+
   const { data } = await db
     .from("subscriptions")
     .select("status, tier, current_period_end, cancel_at_period_end")

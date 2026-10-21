@@ -72,8 +72,15 @@ export default async function PracePage({ searchParams }: Props) {
   // Sezóna = pojmenovaný rozsah dat nad stejným filtrem; má přednost před ručním termínem
   const season = getSeason(filters.sezona);
   const seasonPeriod = season ? seasonRange(season.key, startOfToday()) : null;
-  const period = seasonPeriod
-    ? { from: seasonPeriod.from, to: seasonPeriod.to, onlyKnown: true }
+  const period = seasonPeriod && season
+    ? {
+        from: seasonPeriod.from,
+        to: seasonPeriod.to,
+        onlyKnown: true,
+        // Sezóna ukazuje jen práce, které v ní začínají — ne ty, co jen přesahují
+        startsOnly: true,
+        priorityTerms: season.keywords,
+      }
     : periodFrom
       ? { from: periodFrom, to: periodTo, onlyKnown: onlyKnownPeriod }
       : undefined;
@@ -99,7 +106,7 @@ export default async function PracePage({ searchParams }: Props) {
         const r = seasonRange(sn.key, today);
         const { total: n } = await getJobs({
           jobType: "seasonal",
-          period: { from: r.from, to: r.to, onlyKnown: true },
+          period: { from: r.from, to: r.to, onlyKnown: true, startsOnly: true, priorityTerms: sn.keywords },
           norwegianOk: false,
           pageSize: 1,
         });
