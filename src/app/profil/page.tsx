@@ -6,6 +6,8 @@ import { reconcileSubscription } from "@/lib/subscription-sync";
 import { ManageSubscriptionButton } from "@/components/premium/ManageSubscriptionButton";
 import { ProfileForm } from "./ProfileForm";
 import { EmailPreferences } from "./EmailPreferences";
+import { Documents } from "./Documents";
+import { listDocuments } from "@/lib/documents";
 
 export const metadata = { title: "Můj profil" };
 
@@ -32,6 +34,7 @@ export default async function ProfilPage({ searchParams }: { searchParams: Promi
     }
   }
   const access = await getContactAccess(user.id, ent);
+  const documents = await listDocuments();
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] py-12 px-4">
@@ -98,6 +101,10 @@ export default async function ProfilPage({ searchParams }: { searchParams: Promi
               </div>
             )}
           </div>
+        </div>
+
+        <div className="mt-6">
+          <Documents documents={documents} ent={ent} />
         </div>
 
         <div className="mt-6">

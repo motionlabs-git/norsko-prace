@@ -1,6 +1,8 @@
 import { createClient } from "@/utils/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { AdminJobsTable } from "./AdminJobsTable";
+import { AdminDocuments } from "./AdminDocuments";
+import { listDocuments } from "@/lib/documents";
 import type { Job } from "@/types";
 
 export const metadata = { title: "Admin" };
@@ -29,6 +31,8 @@ export default async function AdminPage() {
   const syncAgeHours = lastSync ? hoursSince(lastSync.synced_at) : null;
   // Cron běží jednou týdně → do 8 dní je stáří kurzoru normální
   const syncStale = syncAgeHours === null || syncAgeHours > 8 * 24;
+
+  const documents = await listDocuments();
 
   const jobs = (data ?? []) as Pick<Job, "id" | "title_cs" | "title_sk" | "company" | "category_level1" | "location_city" | "is_premium" | "is_active" | "published_at" | "requires_norwegian">[];
 
@@ -69,6 +73,8 @@ export default async function AdminPage() {
             </>
           )}
         </div>
+
+        <AdminDocuments documents={documents} />
 
         <AdminJobsTable jobs={jobs} />
       </div>

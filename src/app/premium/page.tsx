@@ -23,13 +23,13 @@ function Check() {
 const foundingFeatures = [
   "Kontakty na zaměstnavatele a přihlášení u všech nabídek",
   "Vybrané práce — ověřené nabídky, často s ubytováním",
+  "Praktický průvodce v PDF — D-number, BankID, daně, bydlení, pojištění, Revolut",
   "Cena 149 Kč zamčená po celou dobu předplatného",
   "Zrušíš kdykoli jedním klikem v profilu",
 ];
 
 const upcoming = [
   { icon: "🔔", title: "Upozornění na nové nabídky", text: "E-mail, jakmile se objeví práce podle tvého hledání." },
-  { icon: "📋", title: "Průvodce administrativou", text: "D-number, BankID, daně a banka krok za krokem." },
   { icon: "✅", title: "Checklist před odjezdem", text: "Co vyřídit doma a co hned po příjezdu do Norska." },
 ];
 
@@ -52,7 +52,7 @@ export default async function PremiumPage() {
           <h1 className="text-3xl font-extrabold text-white md:text-5xl">Odemkni celý potenciál</h1>
           <p className="mx-auto mt-3 max-w-xl text-white/65">
             Inzeráty a popisy jsou u nás zdarma. S Premium získáš navíc kontakty na zaměstnavatele,
-            vybrané ověřené nabídky a nástroje, které ti sezónu v Norsku výrazně usnadní.
+            vybrané ověřené nabídky a praktického průvodce administrativou ke stažení.
           </p>
           <p className="mx-auto mt-4 max-w-xl text-sm font-semibold text-white/85">
             Nejsi si jistý? Po registraci uvidíš zdarma kontakt u prvních 5 nabídek, které otevřeš.
